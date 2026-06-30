@@ -13,7 +13,8 @@ fs.writeFileSync(TRADES_PATH, JSON.stringify([], null, 2));
 
 // ── B/C. Build mock candles and signal ────────────────────────────────
 const candles = createBullishCandles();
-const signal  = getSignal({ candles, config });
+const htfCandles = createBullishCandles();
+const signal  = getSignal({ candles, config, htfCandles });
 
 // ── D. Fake scan provider: SOL-USDT strong BUY, BTC-USDT weak HOLD ────
 async function scanProvider() {
@@ -24,6 +25,7 @@ async function scanProvider() {
       score:      95,
       reason:     signal.reason,
       candles,
+      htfCandles,
       indicators: signal.indicators,
     },
     {
@@ -32,6 +34,7 @@ async function scanProvider() {
       score:      40,
       reason:     "Mock weak setup",
       candles,
+      htfCandles,
       indicators: signal.indicators,
     },
   ];

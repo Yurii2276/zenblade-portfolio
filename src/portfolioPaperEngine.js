@@ -79,11 +79,18 @@ export async function runPortfolioOnce(options = {}) {
   logInfo(`  Signal: ${best?.action ?? "N/A"}`);
   logInfo(`  Reason: ${best?.reason ?? "N/A"}`);
 
-  if (best && best.score >= 80 && best.action === "BUY") {
+  const minScoreForEntry = config.minScoreForEntry || 80;
+
+  if (best && best.score >= minScoreForEntry && best.action === "BUY") {
+    if (config.paperOnly !== true) {
+      throw new Error("Safety stop: paperOnly must be true");
+    }
+
     const engine = new PaperEngine(
       { ...config, symbol: best.symbol },
       {
         candlesProvider: async () => best.candles,
+        htfCandlesProvider: async () => best.htfCandles,
         statePath,
         tradesPath,
       }
@@ -96,8 +103,9 @@ export async function runPortfolioOnce(options = {}) {
 
   // Save scan candle time after processing
   if (latestPortfolioCandleTime !== null) {
-    state.lastPortfolioScanCandleTime = latestPortfolioCandleTime;
-    saveState(statePath, state);
+    const latestState = loadState(statePath);
+    latestState.lastPortfolioScanCandleTime = latestPortfolioCandleTime;
+    saveState(statePath, latestState);
   }
 }
 

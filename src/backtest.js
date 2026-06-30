@@ -16,7 +16,7 @@ function calcMaxDrawdown(equityCurve) {
   return Math.round(maxDD * 100) / 100;
 }
 
-function backtestSymbol(symbol, candles) {
+function backtestSymbol(symbol, candles, htfCandles) {
   let balance      = INITIAL_BALANCE;
   let openPosition = null;
   const trades     = [];
@@ -50,7 +50,13 @@ function backtestSymbol(symbol, candles) {
 
     // ── Evaluate entry ──────────────────────────────────────────────────
     const historicalCandles = candles.slice(0, i + 1);
-    const signal = getSignal({ candles: historicalCandles, config });
+    const currentTime = currentCandle.time;
+    const htfSlice = htfCandles?.filter((c) => c.time <= currentTime) ?? null;
+    const signal = getSignal({
+      candles: historicalCandles,
+      config,
+      htfCandles: htfSlice,
+    });
 
     if (signal.action === "BUY" && signal.indicators) {
       const trade = calculateLongTrade({
@@ -68,6 +74,27 @@ function backtestSymbol(symbol, candles) {
         };
       }
     }
+  }
+
+  if (openPosition && candles.length > 0) {
+    const { size, entryPrice } = openPosition;
+    const closePrice = candles[candles.length - 1].close;
+    const grossPnl = Math.round((closePrice - entryPrice) * size * 100) / 100;
+    const fees = Math.round((entryPrice + closePrice) * size * config.feeRate * 100) / 100;
+    const netPnl = Math.round((grossPnl - fees) * 100) / 100;
+
+    balance = Math.round((balance + netPnl) * 100) / 100;
+    equity.push(balance);
+    trades.push({
+      entryPrice,
+      closePrice,
+      closeReason: "END_OF_TEST",
+      size,
+      grossPnl,
+      fees,
+      netPnl,
+      balanceAfter: balance,
+    });
   }
 
   return { symbol, trades, finalBalance: balance, equity, candles };
@@ -161,11 +188,31 @@ for (const symbol of config.symbols) {
   });
   console.log(`Candles loaded: ${candles.length}`);
 
+  const htfCandles = config.useHtfFilter === true
+    ? await fetchHistoricalCandles({
+        symbol,
+        bar:         config.htfBar,
+        targetLimit: config.htfCandlesLimit,
+      })
+    : null;
+  console.log(`HTF candles loaded: ${htfCandles?.length ?? 0}`);
+
+  if (candles.length === 0) {
+    console.error(`✖ Backtest skipped for ${symbol}: OKX returned 0 ${config.bar} candles`);
+    process.exitCode = 1;
+    continue;
+  }
+  if (config.useHtfFilter === true && (!htfCandles || htfCandles.length === 0)) {
+    console.error(`✖ Backtest skipped for ${symbol}: OKX returned 0 ${config.htfBar} HTF candles`);
+    process.exitCode = 1;
+    continue;
+  }
+
   if (candles.length < 200) {
     console.log(`⚠ Warning: small sample (${candles.length} candles) — results may not be reliable`);
   }
 
-  const result  = backtestSymbol(symbol, candles);
+  const result  = backtestSymbol(symbol, candles, htfCandles);
   const summary = buildSummary(result);
   summaries.push(summary);
 

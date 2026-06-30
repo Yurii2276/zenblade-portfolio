@@ -20,6 +20,12 @@ export const config = {
   minRsiForLong: 45,
   maxRsiForLong: 65,
   minVolumeFactor: 1.05,
+  useHtfFilter: true,
+  htfBar: "1H",
+  htfCandlesLimit: 500,
+  htfEmaFast: 20,
+  htfEmaSlow: 50,
+  paperOnly: true,
   backtestCandlesLimit: 2000,
   activeProfile: "balanced",
   strategyProfiles: {
@@ -32,6 +38,7 @@ export const config = {
       atrStopMultiplier: 1.0,
       atrTakeMultiplier: 1.8,
       minScoreForEntry: 85,
+      useHtfFilter: true,
     },
     balanced: {
       emaFast: 20,
@@ -42,6 +49,7 @@ export const config = {
       atrStopMultiplier: 1.2,
       atrTakeMultiplier: 1.8,
       minScoreForEntry: 80,
+      useHtfFilter: true,
     },
     aggressive: {
       emaFast: 9,
@@ -52,6 +60,7 @@ export const config = {
       atrStopMultiplier: 1.0,
       atrTakeMultiplier: 1.5,
       minScoreForEntry: 70,
+      useHtfFilter: true,
     },
   },
   telegramEnabled: true,

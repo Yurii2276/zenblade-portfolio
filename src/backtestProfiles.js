@@ -16,7 +16,7 @@ function calcMaxDrawdown(equityCurve) {
   return Math.round(maxDD * 100) / 100;
 }
 
-function backtestSymbol(candles, profileConfig) {
+function backtestSymbol(candles, htfCandles, profileConfig) {
   let balance      = INITIAL_BALANCE;
   let openPosition = null;
   const trades     = [];
@@ -47,7 +47,13 @@ function backtestSymbol(candles, profileConfig) {
     }
 
     const historicalCandles = candles.slice(0, i + 1);
-    const signal = getSignal({ candles: historicalCandles, config: profileConfig });
+    const currentTime = currentCandle.time;
+    const htfSlice = htfCandles?.filter((c) => c.time <= currentTime) ?? null;
+    const signal = getSignal({
+      candles: historicalCandles,
+      config: profileConfig,
+      htfCandles: htfSlice,
+    });
 
     if (signal.action === "BUY" && signal.indicators) {
       const trade = calculateLongTrade({
@@ -65,6 +71,26 @@ function backtestSymbol(candles, profileConfig) {
         };
       }
     }
+  }
+
+  if (openPosition && candles.length > 0) {
+    const { size, entryPrice } = openPosition;
+    const closePrice = candles[candles.length - 1].close;
+    const grossPnl = Math.round((closePrice - entryPrice) * size * 100) / 100;
+    const fees = Math.round((entryPrice + closePrice) * size * profileConfig.feeRate * 100) / 100;
+    const netPnl = Math.round((grossPnl - fees) * 100) / 100;
+
+    balance = Math.round((balance + netPnl) * 100) / 100;
+    equity.push(balance);
+    trades.push({
+      entryPrice,
+      closePrice,
+      closeReason: "END_OF_TEST",
+      size,
+      grossPnl,
+      fees,
+      netPnl,
+    });
   }
 
   return { trades, finalBalance: balance, equity };
@@ -112,12 +138,32 @@ console.log();
 const candleCache = {};
 for (const symbol of config.symbols) {
   process.stdout.write(`Loading candles for ${symbol}...`);
-  candleCache[symbol] = await fetchHistoricalCandles({
+  const candles = await fetchHistoricalCandles({
     symbol,
     bar:         config.bar,
     targetLimit: config.backtestCandlesLimit,
   });
-  console.log(` ${candleCache[symbol].length} candles`);
+  const htfCandles = config.useHtfFilter === true
+    ? await fetchHistoricalCandles({
+        symbol,
+        bar:         config.htfBar,
+        targetLimit: config.htfCandlesLimit,
+      })
+    : null;
+
+  let error = null;
+  if (candles.length === 0) {
+    error = `OKX returned 0 ${config.bar} candles`;
+  } else if (config.useHtfFilter === true && (!htfCandles || htfCandles.length === 0)) {
+    error = `OKX returned 0 ${config.htfBar} HTF candles`;
+  }
+
+  candleCache[symbol] = { candles, htfCandles, error };
+  console.log(` ${candles.length} candles | HTF: ${htfCandles?.length ?? 0}`);
+  if (error) {
+    console.warn(`⚠ ${symbol} failed: ${error}`);
+    process.exitCode = 1;
+  }
 }
 console.log();
 
@@ -132,8 +178,13 @@ for (const [profileName, profile] of Object.entries(config.strategyProfiles)) {
   console.log();
 
   for (const symbol of config.symbols) {
-    const candles = candleCache[symbol];
-    const { trades, finalBalance, equity } = backtestSymbol(candles, profileConfig);
+    const { candles, htfCandles, error } = candleCache[symbol];
+    if (error) {
+      console.warn(`   ${symbol}: FAILED — ${error}`);
+      continue;
+    }
+
+    const { trades, finalBalance, equity } = backtestSymbol(candles, htfCandles, profileConfig);
     const summary = buildSummary({ symbol, profileName, trades, finalBalance, equity });
     allSummaries.push(summary);
 
@@ -171,10 +222,15 @@ allSummaries.forEach((s, i) => {
 
 // ── Best overall ──────────────────────────────────────────────────────────
 const best = allSummaries[0];
-console.log("\nBest profile overall:");
-console.log(`   Profile:       ${best.profileName}`);
-console.log(`   Symbol:        ${best.symbol}`);
-console.log(`   Net PnL:       ${best.netPnl} USDT`);
-console.log(`   Win Rate:      ${best.winRate}`);
-console.log(`   Profit Factor: ${best.profitFactor}`);
-console.log(`   Max Drawdown:  ${best.maxDrawdown} USDT`);
+if (best) {
+  console.log("\nBest profile overall:");
+  console.log(`   Profile:       ${best.profileName}`);
+  console.log(`   Symbol:        ${best.symbol}`);
+  console.log(`   Net PnL:       ${best.netPnl} USDT`);
+  console.log(`   Win Rate:      ${best.winRate}`);
+  console.log(`   Profit Factor: ${best.profitFactor}`);
+  console.log(`   Max Drawdown:  ${best.maxDrawdown} USDT`);
+} else {
+  console.error("\nNo valid profile results: candle loading failed for every symbol.");
+  process.exitCode = 1;
+}

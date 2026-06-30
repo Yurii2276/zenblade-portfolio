@@ -3,6 +3,7 @@ import { getSignal } from "./strategy.js";
 import { createBullishCandles } from "./mockScenarios.js";
 
 const candles = createBullishCandles();
+const htfCandles = createBullishCandles();
 
 const first = candles[0];
 const last = candles[candles.length - 1];
@@ -18,7 +19,7 @@ if (last.time <= first.time) {
   throw new Error("Candles order error: expected old -> new");
 }
 
-const signal = getSignal({ candles, config });
+const signal = getSignal({ candles, config, htfCandles });
 
 console.log("\n=== ZenBlade Test Signal ===");
 console.log(`Signal:  ${signal.action}`);

@@ -10,6 +10,7 @@ const TEST_TRADES = "data/test-trades.json";
 const TEST_OPTS = {
   statePath:  TEST_STATE,
   tradesPath: TEST_TRADES,
+  htfCandlesProvider: async () => createBullishCandles(),
 };
 
 function writeJson(filePath, data) {

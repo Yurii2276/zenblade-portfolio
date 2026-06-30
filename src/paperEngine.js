@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { getSignal } from "./strategy.js";
 import { logInfo } from "./logger.js";
-import { fetchCandles } from "./okxClient.js";
+import { fetchCandles, fetchHistoricalCandles } from "./okxClient.js";
 import { calculateLongTrade } from "./riskManager.js";
 import { sendTelegramMessage } from "./telegram.js";
 
@@ -30,6 +30,7 @@ export class PaperEngine {
   constructor(config, options = {}) {
     this.config = config;
     this.candlesProvider = options.candlesProvider || null;
+    this.htfCandlesProvider = options.htfCandlesProvider || null;
     this.statePath  = path.resolve(options.statePath  || "data/state.json");
     this.tradesPath = path.resolve(options.tradesPath || "data/trades.json");
 
@@ -131,7 +132,19 @@ export class PaperEngine {
     }
 
     // New candle — run full analysis
-    const signal = getSignal({ candles, config: this.config });
+    const htfCandles = this.config.useHtfFilter === true
+      ? (
+          this.htfCandlesProvider
+            ? await this.htfCandlesProvider()
+            : await fetchHistoricalCandles({
+                symbol:      this.config.symbol,
+                bar:         this.config.htfBar,
+                targetLimit: this.config.htfCandlesLimit,
+              })
+        )
+      : null;
+
+    const signal = getSignal({ candles, config: this.config, htfCandles });
     const ind    = signal.indicators;
 
     logInfo(`Баланс: ${this.balance} USDT`);
@@ -146,6 +159,10 @@ export class PaperEngine {
       logInfo(`ATR14: ${ind.atr14}`);
       logInfo(`Last Volume: ${ind.lastVolume}`);
       logInfo(`Volume SMA20: ${ind.volumeSma20}`);
+      logInfo(`HTF Last Close: ${ind.htfLastClose}`);
+      logInfo(`HTF EMA Fast: ${ind.htfEmaFast}`);
+      logInfo(`HTF EMA Slow: ${ind.htfEmaSlow}`);
+      logInfo(`HTF Trend OK: ${ind.htfTrendOk}`);
     }
 
     logInfo(`Сигнал: ${signal.action}`);

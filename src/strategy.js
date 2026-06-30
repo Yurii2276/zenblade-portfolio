@@ -1,6 +1,6 @@
 import { ema, rsi, atr, volumeSma } from "./indicators.js";
 
-export function getSignal({ candles, config }) {
+export function getSignal({ candles, config, htfCandles = null }) {
   if (!candles || candles.length < 60) {
     return {
       action: "HOLD",
@@ -31,7 +31,45 @@ export function getSignal({ candles, config }) {
     atr14,
     lastVolume,
     volumeSma20,
+    htfLastClose: null,
+    htfEmaFast:   null,
+    htfEmaSlow:   null,
+    htfTrendOk:   config.useHtfFilter === true ? false : null,
   };
+
+  if (config.useHtfFilter === true) {
+    const minimumHtfCandles = config.htfEmaSlow + 5;
+    if (!htfCandles || htfCandles.length < minimumHtfCandles) {
+      return {
+        action: "HOLD",
+        reason: "Недостатньо HTF-свічок для підтвердження тренду",
+        indicators,
+      };
+    }
+
+    const htfCloses = htfCandles.map((c) => c.close);
+    const htfLastClose = htfCloses[htfCloses.length - 1];
+    const htfEmaFast = ema(htfCloses, config.htfEmaFast);
+    const htfEmaSlow = ema(htfCloses, config.htfEmaSlow);
+    const htfTrendOk =
+      htfEmaFast > htfEmaSlow &&
+      htfLastClose > htfEmaFast;
+
+    Object.assign(indicators, {
+      htfLastClose,
+      htfEmaFast,
+      htfEmaSlow,
+      htfTrendOk,
+    });
+
+    if (!htfTrendOk) {
+      return {
+        action: "HOLD",
+        reason: "HTF-фільтр не підтверджує long-тренд",
+        indicators,
+      };
+    }
+  }
 
   const allConditions =
     emaFastVal > emaSlowVal &&

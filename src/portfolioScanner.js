@@ -1,5 +1,5 @@
 import { config as defaultConfig } from "./config.js";
-import { fetchCandles } from "./okxClient.js";
+import { fetchCandles, fetchHistoricalCandles } from "./okxClient.js";
 import { getSignal } from "./strategy.js";
 
 async function scanSymbol(symbol, config) {
@@ -9,10 +9,21 @@ async function scanSymbol(symbol, config) {
     limit: config.candlesLimit,
   });
 
-  const signal = getSignal({ candles, config });
+  const htfCandles = config.useHtfFilter === true
+    ? await fetchHistoricalCandles({
+        symbol,
+        bar:         config.htfBar,
+        targetLimit: config.htfCandlesLimit,
+      })
+    : null;
+
+  const signal = getSignal({ candles, config, htfCandles });
   const ind    = signal.indicators ?? {};
 
-  const { lastClose, emaFast, emaSlow, rsi14, atr14, lastVolume, volumeSma20 } = ind;
+  const {
+    lastClose, emaFast, emaSlow, rsi14, atr14, lastVolume, volumeSma20,
+    htfTrendOk,
+  } = ind;
 
   let score = 0;
   if (emaFast != null && emaSlow != null && emaFast > emaSlow)                           score += 30;
@@ -22,6 +33,7 @@ async function scanSymbol(symbol, config) {
       lastVolume >= volumeSma20 * config.minVolumeFactor)                                score += 15;
   if (atr14 != null && atr14 > 0)                                                       score += 10;
   if (signal.action === "BUY")                                                           score += 5;
+  if (htfTrendOk === true)                                                              score += 15;
 
   return {
     symbol,
@@ -29,6 +41,7 @@ async function scanSymbol(symbol, config) {
     score,
     reason:     signal.reason,
     candles,
+    htfCandles,
     indicators: ind,
   };
 }
@@ -51,7 +64,7 @@ export async function scanPortfolio(config) {
 }
 
 function printResults(results, config) {
-  const threshold = config.minScoreForEntry ?? 80;
+  const threshold = config.minScoreForEntry || 80;
   console.log("=== ZenBlade Portfolio Scanner ===\n");
 
   results.forEach((r, i) => {
@@ -66,12 +79,16 @@ function printResults(results, config) {
     console.log(`   ATR14:        ${ind.atr14      ?? "N/A"}`);
     console.log(`   Volume:       ${ind.lastVolume  ?? "N/A"}`);
     console.log(`   Volume SMA:   ${ind.volumeSma20 ?? "N/A"}`);
+    console.log(`   HTF Last Close: ${ind.htfLastClose ?? "N/A"}`);
+    console.log(`   HTF EMA Fast:   ${ind.htfEmaFast   ?? "N/A"}`);
+    console.log(`   HTF EMA Slow:   ${ind.htfEmaSlow   ?? "N/A"}`);
+    console.log(`   HTF Trend OK:   ${ind.htfTrendOk   ?? "N/A"}`);
     console.log(`   Reason:       ${r.reason}`);
     console.log();
   });
 
   const best     = results[0];
-  const isStrong = best && best.score >= threshold;
+  const isStrong = best && best.score >= threshold && best.action === "BUY";
 
   console.log("Best candidate:");
   if (isStrong) {
