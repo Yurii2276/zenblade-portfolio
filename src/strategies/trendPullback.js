@@ -88,6 +88,18 @@ export function getTrendPullbackSignal({ candles, config, htfCandles = null }) {
     }
   }
 
+  const volumeTooHigh =
+    config.maxVolumeFactor != null &&
+    lastVolume > volumeSma20 * config.maxVolumeFactor;
+
+  if (volumeTooHigh) {
+    return {
+      action: "HOLD",
+      reason: "Volume spike too high, possible exhaustion",
+      indicators,
+    };
+  }
+
   const trend5mOk =
     emaFastVal > emaSlowVal &&
     lastClose > emaFastVal &&

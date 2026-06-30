@@ -20,6 +20,7 @@ export const config = {
   minRsiForLong: 45,
   maxRsiForLong: 65,
   minVolumeFactor: 1.05,
+  maxVolumeFactor: null,
   useHtfFilter: true,
   htfBar: "1H",
   htfCandlesLimit: 500,
