@@ -28,6 +28,19 @@ export const config = {
   paperOnly: true,
   backtestCandlesLimit: 2000,
   activeProfile: "balanced",
+  activeStrategy: "trendMomentum",
+  strategies: {
+    trendMomentum: {
+      enabled: true,
+      label: "Trend Momentum",
+    },
+    trendPullback: {
+      enabled: true,
+      label: "Trend Pullback",
+    },
+  },
+  pullbackLookback: 8,
+  pullbackTolerancePct: 0.002,
   strategyProfiles: {
     conservative: {
       emaFast: 20,

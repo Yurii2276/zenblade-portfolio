@@ -17,7 +17,9 @@
     "stats": "node src/stats.js",
     "summary": "node src/dailySummary.js",
     "backtest": "node src/backtest.js",
-    "backtest:profiles": "node src/backtestProfiles.js"
+    "backtest:profiles": "node src/backtestProfiles.js",
+    "backtest:strategies": "node src/backtestStrategies.js",
+    "test:strategies": "node src/testStrategies.js"
   },
   "main": "src/index.js",
   "license": "MIT"
