@@ -8,16 +8,30 @@ import { logInfo } from "./logger.js";
 const DEFAULT_STATE_PATH  = path.resolve("data/state.json");
 const DEFAULT_TRADES_PATH = path.resolve("data/trades.json");
 
-const DEFAULT_STATE = { balance: 1000, openPosition: null, lastProcessedCandleTime: null };
+const DEFAULT_STATE = {
+  balance: 1000,
+  openPosition: null,
+  lastProcessedCandleTime: null,
+  lastPortfolioScanCandleTime: null,
+};
 
 function loadState(statePath) {
   try {
     const raw = fs.readFileSync(statePath, "utf-8");
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    // migrate old state without lastPortfolioScanCandleTime
+    if (!("lastPortfolioScanCandleTime" in parsed)) {
+      parsed.lastPortfolioScanCandleTime = null;
+    }
+    return parsed;
   } catch {
     fs.writeFileSync(statePath, JSON.stringify(DEFAULT_STATE, null, 2));
-    return DEFAULT_STATE;
+    return { ...DEFAULT_STATE };
   }
+}
+
+function saveState(statePath, state) {
+  fs.writeFileSync(statePath, JSON.stringify(state, null, 2));
 }
 
 export async function runPortfolioOnce(options = {}) {
@@ -44,13 +58,27 @@ export async function runPortfolioOnce(options = {}) {
 
   const best = results[0];
 
+  // ── D. Anti-spam: check if this candle was already scanned ────────────
+  const latestPortfolioCandleTime = best?.candles?.[best.candles.length - 1]?.time ?? null;
+
+  if (
+    latestPortfolioCandleTime !== null &&
+    state.lastPortfolioScanCandleTime === latestPortfolioCandleTime
+  ) {
+    logInfo("Portfolio candle already scanned. Waiting for new 5m candle.");
+    logInfo(`  Best:   ${best.symbol}`);
+    logInfo(`  Score:  ${best.score}`);
+    logInfo(`  Signal: ${best.action}`);
+    return;
+  }
+
+  // ── E. New candle: full analysis ──────────────────────────────────────
   logInfo("Best portfolio candidate:");
   logInfo(`  Symbol: ${best?.symbol ?? "N/A"}`);
   logInfo(`  Score:  ${best?.score  ?? 0}`);
   logInfo(`  Signal: ${best?.action ?? "N/A"}`);
   logInfo(`  Reason: ${best?.reason ?? "N/A"}`);
 
-  // ── D. Strong BUY setup ───────────────────────────────────────────────
   if (best && best.score >= 80 && best.action === "BUY") {
     const engine = new PaperEngine(
       { ...config, symbol: best.symbol },
@@ -62,11 +90,15 @@ export async function runPortfolioOnce(options = {}) {
     );
     await engine.runOnce();
     logInfo("Portfolio paper position opened or processed");
-    return;
+  } else {
+    logInfo("No strong portfolio setup. No paper trade opened.");
   }
 
-  // ── E. No strong setup ────────────────────────────────────────────────
-  logInfo("No strong portfolio setup. No paper trade opened.");
+  // Save scan candle time after processing
+  if (latestPortfolioCandleTime !== null) {
+    state.lastPortfolioScanCandleTime = latestPortfolioCandleTime;
+    saveState(statePath, state);
+  }
 }
 
 // CLI entry point

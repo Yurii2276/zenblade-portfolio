@@ -22,6 +22,7 @@ const trades = loadJson(TRADES_PATH, DEFAULT_TRADES);
 
 const currentBalance = state.balance ?? 1000;
 const openPosition   = state.openPosition ?? null;
+const lastPortfolioScanCandleTime = state.lastPortfolioScanCandleTime ?? null;
 
 const totalTrades = trades.length;
 const wins   = trades.filter((t) => t.netPnl > 0);
@@ -48,18 +49,19 @@ const profitFactor = lossCount > 0
   : "N/A";
 
 console.log("=== ZenBlade Paper Stats ===");
-console.log(`Current Balance:  ${currentBalance} USDT`);
-console.log(`Open Position:    ${openPosition ? "YES" : "none"}`);
-console.log(`Total Trades:     ${totalTrades}`);
-console.log(`Wins:             ${winCount}`);
-console.log(`Losses:           ${lossCount}`);
-console.log(`Win Rate:         ${winRate}`);
-console.log(`Gross PnL:        ${grossPnlTotal} USDT`);
-console.log(`Fees:             ${feesTotal} USDT`);
-console.log(`Net PnL:          ${netPnlTotal} USDT`);
-console.log(`Average Win:      ${avgWin} USDT`);
-console.log(`Average Loss:     ${avgLoss} USDT`);
-console.log(`Profit Factor:    ${profitFactor}`);
+console.log(`Current Balance:              ${currentBalance} USDT`);
+console.log(`Open Position:                ${openPosition ? "YES" : "none"}`);
+console.log(`Total Trades:                 ${totalTrades}`);
+console.log(`Wins:                         ${winCount}`);
+console.log(`Losses:                       ${lossCount}`);
+console.log(`Win Rate:                     ${winRate}`);
+console.log(`Gross PnL:                    ${grossPnlTotal} USDT`);
+console.log(`Fees:                         ${feesTotal} USDT`);
+console.log(`Net PnL:                      ${netPnlTotal} USDT`);
+console.log(`Average Win:                  ${avgWin} USDT`);
+console.log(`Average Loss:                 ${avgLoss} USDT`);
+console.log(`Profit Factor:                ${profitFactor}`);
+console.log(`Last Portfolio Scan Candle:   ${lastPortfolioScanCandleTime ?? "none"}`);
 
 if (openPosition) {
   console.log("\n── Open Position ──");

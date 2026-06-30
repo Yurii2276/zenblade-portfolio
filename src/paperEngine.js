@@ -8,6 +8,7 @@ import { sendTelegramMessage } from "./telegram.js";
 
 const DEFAULT_STATE = {
   balance: 1000,
+  lastPortfolioScanCandleTime: null,
   openPosition: null,
   lastProcessedCandleTime: null,
 };

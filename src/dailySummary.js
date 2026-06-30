@@ -6,7 +6,12 @@ import { sendTelegramMessage } from "./telegram.js";
 const STATE_PATH  = path.resolve("data/state.json");
 const TRADES_PATH = path.resolve("data/trades.json");
 
-const DEFAULT_STATE  = { balance: 1000, openPosition: null, lastProcessedCandleTime: null };
+const DEFAULT_STATE  = {
+  balance: 1000,
+  openPosition: null,
+  lastProcessedCandleTime: null,
+  lastPortfolioScanCandleTime: null,
+};
 const DEFAULT_TRADES = [];
 
 function loadJson(filePath, defaultValue) {
@@ -35,9 +40,14 @@ const netPnlToday = Math.round(tradesToday.reduce((s, t) => s + t.netPnl, 0) * 1
 
 const currentBalance = state.balance ?? 1000;
 const openPosition   = state.openPosition ?? null;
+const lastPortfolioScanCandleTime = state.lastPortfolioScanCandleTime ?? null;
 
 const openPositionText = openPosition
   ? `${openPosition.symbol} ${openPosition.side} @ ${openPosition.entryPrice}`
+  : "none";
+
+const lastScanText = lastPortfolioScanCandleTime
+  ? new Date(lastPortfolioScanCandleTime).toISOString()
   : "none";
 
 const summary =
@@ -47,7 +57,8 @@ const summary =
   `Wins: ${winsToday.length}\n` +
   `Losses: ${lossesToday.length}\n` +
   `Net PnL today: ${netPnlToday} USDT\n` +
-  `Open position: ${openPositionText}`;
+  `Open position: ${openPositionText}\n` +
+  `Last portfolio scan candle: ${lastScanText}`;
 
 console.log(summary);
 

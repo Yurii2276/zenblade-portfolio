@@ -1,0 +1,91 @@
+Продовжуємо ZenBlade Portfolio.
+
+Потрібно зробити anti-spam для portfolio:loop.
+
+Реальні ордери НЕ робити. OKX API ключі НЕ використовувати.
+
+Проблема:
+portfolio:loop кожну хвилину друкує повний Best portfolio candidate, навіть якщо 5m-свічка та сама.
+
+Потрібно:
+- сканувати можна щохвилини
+- але повний portfolio decision друкувати тільки на новій confirmed 5m-свічці
+- якщо свічка та сама — вивести коротке повідомлення і не друкувати повний блок
+
+1. Онови дефолтний state у всіх місцях, де він створюється:
+
+{
+  "balance": 1000,
+  "openPosition": null,
+  "lastProcessedCandleTime": null,
+  "lastPortfolioScanCandleTime": null
+}
+
+Оновити:
+- data/state.json якщо потрібно
+- src/resetPaper.js
+- src/paperEngine.js якщо там є default state
+- src/portfolioPaperEngine.js якщо там є default state
+
+Якщо старий state не має lastPortfolioScanCandleTime — додати null автоматично.
+
+2. Онови src/portfolioPaperEngine.js
+
+Коли openPosition немає:
+
+A. Викликати scanPortfolio(config) або options.scanProvider як зараз.
+
+B. Взяти best = results[0]
+
+C. Визначити latestPortfolioCandleTime:
+const latestPortfolioCandleTime = best.candles[best.candles.length - 1].time
+
+D. Якщо state.lastPortfolioScanCandleTime === latestPortfolioCandleTime:
+- НЕ друкувати повний Best portfolio candidate
+- НЕ відкривати нову позицію
+- вивести тільки:
+  Portfolio candle already scanned. Waiting for new 5m candle.
+  Best:
+  Score:
+  Signal:
+- завершити runPortfolioOnce
+
+E. Якщо це нова свічка:
+- друкувати Best portfolio candidate як зараз
+- перевірити score >= 80 і BUY як зараз
+- якщо відкриваємо позицію — PaperEngine відкриває як зараз
+- якщо не відкриваємо — No strong portfolio setup
+- після обробки записати:
+  state.lastPortfolioScanCandleTime = latestPortfolioCandleTime
+  saveState(state)
+
+Важливо:
+- якщо openPosition є — TP/SL моніторинг має працювати завжди, незалежно від lastPortfolioScanCandleTime
+- якщо openPosition є — логіка існуючої позиції не повинна зламатися
+
+3. Онови src/stats.js
+
+Якщо є lastPortfolioScanCandleTime — вивести:
+
+Last Portfolio Scan Candle:
+
+4. Онови src/dailySummary.js
+
+Додай у summary:
+
+Last portfolio scan candle:
+
+5. Запусти:
+
+npm run reset:paper
+npm run portfolio:start
+npm run portfolio:start
+npm run stats
+
+Очікування:
+- перший portfolio:start показує повний Best portfolio candidate
+- другий portfolio:start показує коротко:
+  Portfolio candle already scanned. Waiting for new 5m candle.
+- stats показує lastPortfolioScanCandleTime
+
+Покажи результати.

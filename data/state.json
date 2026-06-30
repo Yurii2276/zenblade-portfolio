@@ -1,5 +1,6 @@
 {
   "balance": 1000,
   "openPosition": null,
-  "lastProcessedCandleTime": null
+  "lastProcessedCandleTime": null,
+  "lastPortfolioScanCandleTime": 1782817500000
 }

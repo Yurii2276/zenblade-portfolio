@@ -8,6 +8,7 @@ const defaultState = {
   balance: 1000,
   openPosition: null,
   lastProcessedCandleTime: null,
+  lastPortfolioScanCandleTime: null,
 };
 const defaultTrades = [];
 
