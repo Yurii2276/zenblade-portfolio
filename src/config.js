@@ -1,6 +1,7 @@
 export const config = {
   mode: "paper",
   symbol: "BTC-USDT",
+  symbols: ["BTC-USDT", "ETH-USDT", "SOL-USDT"],
   initialBalance: 1000,
   riskPerTrade: 0.01,
   takeProfitPct: 0.006,

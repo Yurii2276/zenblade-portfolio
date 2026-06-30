@@ -11,7 +11,8 @@
     "test:telegram": "node src/testTelegram.js",
     "reset:paper": "node src/resetPaper.js",
     "stats": "node src/stats.js",
-    "summary": "node src/dailySummary.js"
+    "summary": "node src/dailySummary.js",
+    "scan": "node src/portfolioScanner.js"
   },
   "main": "src/index.js",
   "license": "MIT"

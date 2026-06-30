@@ -1,0 +1,123 @@
+Продовжуємо ZenBlade Portfolio.
+
+Потрібно додати Portfolio Scanner для кількох символів.
+
+Реальні ордери НЕ робити. OKX API ключі НЕ використовувати. Paper-позиції через scanner поки НЕ відкривати. Тільки аналіз і рейтинг.
+
+1. Онови src/config.js
+
+Додай:
+
+symbols: ["BTC-USDT", "ETH-USDT", "SOL-USDT"]
+
+Поточний symbol: "BTC-USDT" залишити, щоб npm start працював як раніше.
+
+2. Створи файл:
+src/portfolioScanner.js
+
+Логіка:
+
+- імпортуй config
+- імпортуй fetchCandles з okxClient.js
+- імпортуй getSignal з strategy.js
+- імпортуй logInfo з logger.js
+
+Для кожного symbol з config.symbols:
+- отримати candles через fetchCandles({
+    symbol,
+    bar: config.bar,
+    limit: config.candlesLimit
+  })
+
+- отримати signal через getSignal({ candles, config })
+
+- взяти indicators:
+  lastClose
+  ema20
+  ema50
+  rsi14
+  atr14
+  lastVolume
+  volumeSma20
+
+- порахувати score від 0 до 100:
+
+score rules:
++30 якщо ema20 > ema50
++20 якщо lastClose > ema20
++20 якщо RSI14 >= config.minRsiForLong і RSI14 <= config.maxRsiForLong
++15 якщо lastVolume >= volumeSma20 * config.minVolumeFactor
++10 якщо ATR14 > 0
++5 якщо signal.action === "BUY"
+
+Якщо значення null або undefined — не додавати бали.
+
+Повернути обʼєкт:
+
+{
+  symbol,
+  action,
+  score,
+  reason,
+  indicators
+}
+
+3. У portfolioScanner.js:
+
+- відсортуй результати за score від більшого до меншого
+- виведи красиво:
+
+=== ZenBlade Portfolio Scanner ===
+
+1. SYMBOL
+Score:
+Signal:
+Price:
+EMA20:
+EMA50:
+RSI14:
+ATR14:
+Volume:
+Volume SMA20:
+Reason:
+
+2. SYMBOL
+...
+
+- в кінці виведи:
+
+Best candidate:
+SYMBOL | Score | Signal
+
+Якщо всі score низькі — все одно показати best candidate, але написати:
+"No strong setup yet"
+
+Вважати strong setup якщо score >= 80.
+
+4. Онови package.json
+
+Додай script:
+
+"scan": "node src/portfolioScanner.js"
+
+Не видаляй існуючі scripts:
+start
+paper:loop
+test:signal
+test:engine
+test:telegram
+reset:paper
+stats
+summary
+
+5. Запусти:
+
+npm run scan
+
+6. Потім запусти:
+
+npm start
+
+Перевір, що основний BTC paper-bot не зламався.
+
+Покажи результати обох команд.
