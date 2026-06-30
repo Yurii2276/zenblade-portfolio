@@ -1,0 +1,117 @@
+Продовжуємо ZenBlade Portfolio.
+
+Потрібно виправити тестову архітектуру: тести не повинні змінювати основні data/state.json і data/trades.json.
+
+Також потрібно додати STOP_LOSS тест.
+
+Реальні ордери НЕ робити. OKX API ключі НЕ використовувати.
+
+1. Онови src/paperEngine.js
+
+Додай у constructor підтримку optional paths:
+
+constructor(config, options = {}) {
+  this.config = config
+  this.candlesProvider = options.candlesProvider || null
+  this.statePath = options.statePath || "data/state.json"
+  this.tradesPath = options.tradesPath || "data/trades.json"
+}
+
+У всіх місцях, де зараз читається/пишеться:
+data/state.json
+data/trades.json
+
+заміни на:
+this.statePath
+this.tradesPath
+
+npm start має працювати як раніше і використовувати основні файли:
+data/state.json
+data/trades.json
+
+2. Онови src/testPaperEngine.js
+
+Замість data/state.json і data/trades.json використовуй окремі тестові файли:
+
+data/test-state.json
+data/test-trades.json
+
+Перед тестом очищай саме їх:
+
+data/test-state.json:
+{
+  "balance": 1000,
+  "openPosition": null
+}
+
+data/test-trades.json:
+[]
+
+PaperEngine створюй так:
+
+new PaperEngine(config, {
+  candlesProvider,
+  statePath: "data/test-state.json",
+  tradesPath: "data/test-trades.json"
+})
+
+3. У src/testPaperEngine.js залиш TAKE_PROFIT тест, який уже працює.
+
+Але після нього додай окремий STOP_LOSS тест:
+
+A. Знову скинь test-state.json і test-trades.json до:
+{
+  "balance": 1000,
+  "openPosition": null
+}
+[]
+
+B. Перший запуск:
+- candlesProvider повертає createBullishCandles()
+- має відкритися openPosition
+- перевірити, що openPosition не null
+- вивести:
+  STOP OPEN TEST: OK
+
+C. Другий запуск:
+- прочитати openPosition
+- створити новий масив candles на основі createBullishCandles()
+- останню свічку змінити так, щоб:
+  close = openPosition.stopPrice - 10
+  high = openPosition.stopPrice + 20
+  low = openPosition.stopPrice - 20
+  volume = 300
+
+- candlesProvider повертає цей масив
+- PaperEngine має закрити позицію як STOP_LOSS
+
+D. Після запуску прочитати test-state.json і test-trades.json
+
+Перевірити:
+- openPosition === null
+- trades.length === 1
+- trades[0].exitReason === "STOP_LOSS"
+- trades[0].netPnl < 0
+- balance < 1000
+
+Вивести:
+STOP CLOSE TEST: OK
+Exit Reason
+Gross PnL
+Fees
+Net PnL
+Final Balance
+
+4. У кінці testPaperEngine.js видали тестові файли або залиш, але npm start не повинен їх використовувати.
+
+5. package.json не ламай.
+
+6. Запусти:
+
+npm run test:engine
+
+7. Потім запусти:
+
+npm start
+
+8. Покажи результати обох команд.

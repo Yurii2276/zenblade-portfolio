@@ -5,9 +5,6 @@ import { logInfo } from "./logger.js";
 import { fetchCandles } from "./okxClient.js";
 import { calculateLongTrade } from "./riskManager.js";
 
-const STATE_PATH = path.resolve("data/state.json");
-const TRADES_PATH = path.resolve("data/trades.json");
-
 const DEFAULT_STATE = { balance: 1000, openPosition: null };
 
 function loadJson(filePath, defaultValue) {
@@ -27,16 +24,18 @@ export class PaperEngine {
   constructor(config, options = {}) {
     this.config = config;
     this.candlesProvider = options.candlesProvider || null;
+    this.statePath = path.resolve(options.statePath || "data/state.json");
+    this.tradesPath = path.resolve(options.tradesPath || "data/trades.json");
 
-    const state = loadJson(STATE_PATH, DEFAULT_STATE);
+    const state = loadJson(this.statePath, DEFAULT_STATE);
     this.balance = typeof state.balance === "number" ? state.balance : DEFAULT_STATE.balance;
     this.position = state.openPosition ?? null;
-    this.trades = loadJson(TRADES_PATH, []);
+    this.trades = loadJson(this.tradesPath, []);
   }
 
   saveState() {
-    saveJson(STATE_PATH, { balance: this.balance, openPosition: this.position });
-    saveJson(TRADES_PATH, this.trades);
+    saveJson(this.statePath, { balance: this.balance, openPosition: this.position });
+    saveJson(this.tradesPath, this.trades);
   }
 
   closePosition(exitPrice, reason) {
