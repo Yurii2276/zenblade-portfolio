@@ -61,7 +61,7 @@ console.log(`Net PnL:                      ${netPnlTotal} USDT`);
 console.log(`Average Win:                  ${avgWin} USDT`);
 console.log(`Average Loss:                 ${avgLoss} USDT`);
 console.log(`Profit Factor:                ${profitFactor}`);
-console.log(`Last Portfolio Scan Candle:   ${lastPortfolioScanCandleTime ?? "none"}`);
+console.log(`Last Portfolio Scan Candle:   ${lastPortfolioScanCandleTime ? new Date(lastPortfolioScanCandleTime).toISOString() : "none"}`);
 
 if (openPosition) {
   console.log("\n── Open Position ──");
