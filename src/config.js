@@ -20,6 +20,7 @@ export const config = {
   minRsiForLong: 45,
   maxRsiForLong: 65,
   minVolumeFactor: 1.05,
+  backtestCandlesLimit: 2000,
   telegramEnabled: true,
   notifyOnHold: false,
   notifyOnBuy: true,
