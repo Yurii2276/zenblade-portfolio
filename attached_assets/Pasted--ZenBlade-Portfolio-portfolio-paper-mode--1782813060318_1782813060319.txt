@@ -1,0 +1,144 @@
+Продовжуємо ZenBlade Portfolio.
+
+Потрібно додати portfolio paper mode: бот має сканувати кілька символів і відкривати paper-позицію тільки по найкращому сильному сетапу.
+
+Реальні ордери НЕ робити. OKX API ключі НЕ використовувати.
+
+Головне правило:
+- одночасно може бути тільки одна openPosition
+- якщо openPosition вже є — бот тільки контролює TP/SL по цій позиції
+- якщо openPosition немає — бот сканує config.symbols і відкриває paper LONG тільки якщо best score >= 80 і signal.action === "BUY"
+
+1. Онови src/portfolioScanner.js
+
+Зроби так, щоб він не тільки друкував результат, а також експортував функцію:
+
+scanPortfolio(config)
+
+Функція має:
+- пройти по config.symbols
+- отримати candles для кожного symbol
+- отримати signal через getSignal({ candles, config })
+- порахувати score за поточними правилами
+- повернути масив results, відсортований за score спаданням
+
+Кожен result:
+
+{
+  symbol,
+  action,
+  score,
+  reason,
+  candles,
+  indicators
+}
+
+Поточний запуск npm run scan має працювати як раніше і красиво друкувати таблицю.
+
+2. Створи файл:
+src/portfolioPaperEngine.js
+
+Логіка:
+
+- імпортуй config
+- імпортуй scanPortfolio
+- імпортуй PaperEngine
+- імпортуй logInfo
+- імпортуй fs/promises
+
+Функція runPortfolioOnce():
+
+A. Прочитати data/state.json
+Якщо файлу немає — створити:
+{
+  "balance": 1000,
+  "openPosition": null,
+  "lastProcessedCandleTime": null
+}
+
+B. Якщо state.openPosition існує:
+- створити engine = new PaperEngine({
+    ...config,
+    symbol: state.openPosition.symbol
+  })
+- запустити await engine.runOnce()
+- вивести:
+  Portfolio mode: existing position monitored
+- завершити
+
+C. Якщо openPosition немає:
+- викликати const results = await scanPortfolio(config)
+- const best = results[0]
+- вивести:
+  Best portfolio candidate:
+  Symbol:
+  Score:
+  Signal:
+  Reason:
+
+D. Якщо best.score >= 80 і best.action === "BUY":
+- створити engine = new PaperEngine({
+    ...config,
+    symbol: best.symbol
+  }, {
+    candlesProvider: async () => best.candles
+  })
+- запустити await engine.runOnce()
+- вивести:
+  Portfolio paper position opened or processed
+
+E. Якщо score < 80 або action не BUY:
+- вивести:
+  No strong portfolio setup. No paper trade opened.
+
+3. Створи файл:
+src/portfolioLoop.js
+
+Логіка:
+- імпортуй runPortfolioOnce з portfolioPaperEngine.js
+- інтервал 60 секунд
+- при старті вивести:
+
+ZenBlade Portfolio Paper Loop started
+Symbols:
+Bar:
+Interval: 60 seconds
+Mode: paper
+
+- одразу викликати runPortfolioOnce()
+- потім setInterval кожні 60 секунд
+- помилки ловити через try/catch і виводити з датою
+
+4. Онови package.json
+
+Додай scripts:
+
+"portfolio:start": "node src/portfolioPaperEngine.js",
+"portfolio:loop": "node src/portfolioLoop.js"
+
+Не видаляй існуючі:
+start
+paper:loop
+scan
+test:signal
+test:engine
+test:telegram
+reset:paper
+stats
+summary
+
+5. Запусти:
+
+npm run reset:paper
+npm run scan
+npm run portfolio:start
+npm run stats
+
+6. Очікування:
+Зараз, якщо score по всіх символах близько 30, portfolio:start НЕ має відкривати позицію.
+У stats має залишитися:
+Balance 1000
+Open Position none
+Total Trades 0
+
+Покажи результати всіх команд.
