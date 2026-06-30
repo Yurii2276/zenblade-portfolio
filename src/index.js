@@ -1,0 +1,1 @@
+console.log("ZenBlade Portfolio стартує в paper mode");
