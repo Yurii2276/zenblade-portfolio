@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "test:signal": "node src/testSignal.js"
+    "test:signal": "node src/testSignal.js",
+    "test:engine": "node src/testPaperEngine.js"
   },
   "main": "src/index.js",
   "license": "MIT"

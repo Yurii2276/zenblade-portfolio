@@ -1,0 +1,103 @@
+Продовжуємо ZenBlade Portfolio.
+
+Потрібно додати окремий тест paper-engine:
+BUY → openPosition → TAKE_PROFIT → запис у trades.json.
+
+Реальні ордери НЕ робити. OKX API ключі НЕ використовувати. npm start з реальними OKX-свічками не ламати.
+
+1. Онови src/paperEngine.js
+
+Додай можливість передавати optional candlesProvider у constructor:
+
+constructor(config, options = {}) {
+  this.config = config
+  this.candlesProvider = options.candlesProvider || null
+}
+
+У runOnce():
+- якщо this.candlesProvider існує, брати candles через await this.candlesProvider()
+- інакше брати реальні candles через fetchCandles з OKX, як зараз
+
+npm start має працювати як раніше.
+
+2. Створи файл:
+src/testPaperEngine.js
+
+Логіка тесту:
+
+A. Перед тестом очистити state і trades:
+
+data/state.json:
+{
+  "balance": 1000,
+  "openPosition": null
+}
+
+data/trades.json:
+[]
+
+B. Імпортувати:
+- config
+- PaperEngine
+- createBullishCandles з mockScenarios.js
+
+C. Перший запуск:
+- candlesProvider повертає createBullishCandles()
+- PaperEngine має отримати BUY
+- має відкрити openPosition
+- після запуску прочитати data/state.json
+- перевірити, що openPosition не null
+- вивести:
+  OPEN TEST: OK
+  Entry
+  Stop
+  Take
+  Size
+
+D. Другий запуск:
+- прочитати openPosition
+- створити новий масив candles на основі createBullishCandles()
+- останню свічку змінити так, щоб:
+  close = openPosition.takePrice + 10
+  high = openPosition.takePrice + 20
+  low = openPosition.takePrice - 20
+  volume = 300
+
+- candlesProvider повертає цей масив
+- PaperEngine має закрити позицію як TAKE_PROFIT
+- після запуску прочитати state.json і trades.json
+- перевірити:
+  openPosition === null
+  trades.length === 1
+  trades[0].exitReason === "TAKE_PROFIT"
+  trades[0].netPnl > 0
+
+- вивести:
+  CLOSE TEST: OK
+  Exit Reason
+  Gross PnL
+  Fees
+  Net PnL
+  Final Balance
+
+E. Якщо будь-яка перевірка не проходить — кинути Error з чітким текстом.
+
+3. Онови package.json
+
+Додай script:
+
+"test:engine": "node src/testPaperEngine.js"
+
+Не видаляй:
+"start"
+"test:signal"
+
+4. Запусти:
+
+npm run test:engine
+
+5. Потім запусти:
+
+npm start
+
+Покажи результати обох команд.

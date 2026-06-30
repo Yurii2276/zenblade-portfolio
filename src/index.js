@@ -8,7 +8,7 @@ console.log(`Symbol: ${config.symbol}`);
 
 async function main() {
   try {
-    const engine = new PaperEngine();
+    const engine = new PaperEngine(config);
     await engine.runOnce();
   } catch (err) {
     console.error("Помилка запуску:", err.message);

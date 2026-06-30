@@ -1,6 +1,5 @@
 import fs from "fs";
 import path from "path";
-import { config } from "./config.js";
 import { getSignal } from "./strategy.js";
 import { logInfo } from "./logger.js";
 import { fetchCandles } from "./okxClient.js";
@@ -25,7 +24,10 @@ function saveJson(filePath, data) {
 }
 
 export class PaperEngine {
-  constructor() {
+  constructor(config, options = {}) {
+    this.config = config;
+    this.candlesProvider = options.candlesProvider || null;
+
     const state = loadJson(STATE_PATH, DEFAULT_STATE);
     this.balance = typeof state.balance === "number" ? state.balance : DEFAULT_STATE.balance;
     this.position = state.openPosition ?? null;
@@ -40,7 +42,7 @@ export class PaperEngine {
   closePosition(exitPrice, reason) {
     const { entryPrice, size } = this.position;
     const grossPnl = (exitPrice - entryPrice) * size;
-    const fees = (entryPrice * size + exitPrice * size) * config.feeRate;
+    const fees = (entryPrice * size + exitPrice * size) * this.config.feeRate;
     const netPnl = Math.round((grossPnl - fees) * 100) / 100;
 
     this.balance = Math.round((this.balance + netPnl) * 100) / 100;
@@ -61,11 +63,13 @@ export class PaperEngine {
   }
 
   async runOnce() {
-    const candles = await fetchCandles({
-      symbol: config.symbol,
-      bar: config.bar,
-      limit: config.candlesLimit,
-    });
+    const candles = this.candlesProvider
+      ? await this.candlesProvider()
+      : await fetchCandles({
+          symbol: this.config.symbol,
+          bar: this.config.bar,
+          limit: this.config.candlesLimit,
+        });
 
     const lastCandle = candles[candles.length - 1];
     const lastPrice = lastCandle.close;
@@ -85,16 +89,16 @@ export class PaperEngine {
       this.saveState();
 
       logInfo(`Баланс: ${this.balance} USDT`);
-      logInfo(`Символ: ${config.symbol}`);
+      logInfo(`Символ: ${this.config.symbol}`);
       logInfo(`Остання ціна: ${lastPrice} USDT`);
       return;
     }
 
-    const signal = getSignal({ candles, config });
+    const signal = getSignal({ candles, config: this.config });
     const ind = signal.indicators;
 
     logInfo(`Баланс: ${this.balance} USDT`);
-    logInfo(`Символ: ${config.symbol}`);
+    logInfo(`Символ: ${this.config.symbol}`);
     logInfo(`Остання ціна: ${lastPrice} USDT`);
     logInfo(`Свічок отримано: ${candles.length}`);
 
@@ -115,11 +119,11 @@ export class PaperEngine {
         balance: this.balance,
         entryPrice: lastPrice,
         atr: ind.atr14,
-        config,
+        config: this.config,
       });
 
       this.position = {
-        symbol: config.symbol,
+        symbol: this.config.symbol,
         side: "LONG",
         entryPrice: trade.entryPrice,
         stopPrice: trade.stopPrice,
