@@ -12,4 +12,11 @@ export const config = {
   rsiPeriod: 14,
   atrPeriod: 14,
   volumePeriod: 20,
+  feeRate: 0.0008,
+  maxPositionValuePct: 0.3,
+  atrStopMultiplier: 1.2,
+  atrTakeMultiplier: 1.8,
+  minRsiForLong: 45,
+  maxRsiForLong: 65,
+  minVolumeFactor: 1.05,
 };

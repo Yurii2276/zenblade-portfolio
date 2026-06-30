@@ -1,0 +1,171 @@
+Продовжуємо ZenBlade Portfolio.
+
+Потрібно додати першу консервативну paper-trading логіку. Реальні ордери НЕ робити. OKX API ключі НЕ використовувати. Тільки paper mode.
+
+Зроби так:
+
+1. Створи файл:
+src/riskManager.js
+
+У ньому експортуй функцію calculateLongTrade({ balance, entryPrice, atr, config })
+
+Логіка:
+- riskAmount = balance * config.riskPerTrade
+- stopPrice = entryPrice - atr * config.atrStopMultiplier
+- takePrice = entryPrice + atr * config.atrTakeMultiplier
+- riskPerUnit = entryPrice - stopPrice
+- size = riskAmount / riskPerUnit
+- positionValue = size * entryPrice
+- maxPositionValue = balance * config.maxPositionValuePct
+
+Якщо positionValue > maxPositionValue:
+- size = maxPositionValue / entryPrice
+- positionValue = maxPositionValue
+
+Поверни:
+{
+  entryPrice,
+  stopPrice,
+  takePrice,
+  size,
+  positionValue,
+  riskAmount
+}
+
+Усі числа округляй до 4 знаків, ціни до 2 знаків.
+
+2. Онови src/config.js
+
+Додай:
+
+feeRate: 0.0008
+maxPositionValuePct: 0.3
+atrStopMultiplier: 1.2
+atrTakeMultiplier: 1.8
+minRsiForLong: 45
+maxRsiForLong: 65
+minVolumeFactor: 1.05
+
+Поточні параметри не видаляй.
+
+3. Створи файл:
+data/state.json
+
+Вміст:
+
+{
+  "balance": 1000,
+  "openPosition": null
+}
+
+4. Онови src/strategy.js
+
+Функція getSignal({ candles, config }) має повертати BUY тільки якщо всі умови виконані:
+
+- candles мінімум 60
+- ema20 > ema50
+- lastClose > ema20
+- RSI14 >= config.minRsiForLong
+- RSI14 <= config.maxRsiForLong
+- lastVolume >= volumeSma20 * config.minVolumeFactor
+- ATR14 не null і більше 0
+
+Якщо всі умови виконані:
+action: "BUY"
+reason: "EMA20 вище EMA50, ціна вище EMA20, RSI у робочій зоні, обʼєм підтверджує рух"
+
+Інакше:
+action: "HOLD"
+reason має коротко пояснювати головну причину:
+- якщо ema20 <= ema50: "Немає long-тренду: EMA20 нижче або дорівнює EMA50"
+- якщо lastClose <= ema20: "Ціна нижче EMA20, імпульс недостатній"
+- якщо RSI нижче мінімуму: "RSI занизький для входу"
+- якщо RSI вище максимуму: "RSI зависокий, вхід ризикований"
+- якщо lastVolume < volumeSma20 * minVolumeFactor: "Обʼєм не підтверджує рух"
+- інакше: "Умови для входу не виконані"
+
+Повернення має містити:
+{
+  action,
+  reason,
+  indicators: {
+    lastClose,
+    ema20,
+    ema50,
+    rsi14,
+    atr14,
+    lastVolume,
+    volumeSma20
+  }
+}
+
+5. Онови src/paperEngine.js
+
+Додай читання і запис state:
+
+- читати data/state.json
+- якщо файлу немає або він неправильний — створити дефолтний state з balance 1000 і openPosition null
+- читати data/trades.json
+- якщо файлу немає — створити []
+
+Логіка runOnce():
+
+A. Отримати свічки OKX.
+B. Отримати lastClose.
+C. Якщо є openPosition:
+   - якщо lastClose <= stopPrice:
+      закрити позицію як STOP_LOSS
+   - якщо lastClose >= takePrice:
+      закрити позицію як TAKE_PROFIT
+   - при закритті порахувати:
+      grossPnl = (exitPrice - entryPrice) * size
+      fees = (entryPrice * size + exitPrice * size) * config.feeRate
+      netPnl = grossPnl - fees
+      balance = balance + netPnl
+      записати угоду в trades.json
+      openPosition = null
+   - якщо ні TP ні SL не спрацювали:
+      просто вивести відкриту позицію і unrealizedPnL
+
+D. Якщо openPosition немає:
+   - отримати signal зі strategy.js
+   - якщо signal.action === "BUY":
+      розрахувати угоду через calculateLongTrade
+      записати openPosition:
+      {
+        symbol,
+        side: "LONG",
+        entryPrice,
+        stopPrice,
+        takePrice,
+        size,
+        positionValue,
+        openedAt,
+        reason
+      }
+      зберегти state.json
+      вивести, що paper-position відкрита
+   - якщо HOLD:
+      просто вивести причину
+
+E. У всіх випадках логувати:
+- Баланс
+- Символ
+- Остання ціна
+- Свічок отримано
+- EMA20
+- EMA50
+- RSI14
+- ATR14
+- Last Volume
+- Volume SMA20
+- Сигнал
+- Причина
+- Якщо є позиція: entry, stop, take, size, unrealizedPnL
+
+6. Не ламай npm start.
+
+7. Після завершення запусти:
+npm start
+
+І покажи результат.
