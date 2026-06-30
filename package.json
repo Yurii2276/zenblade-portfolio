@@ -10,7 +10,8 @@
     "test:engine": "node src/testPaperEngine.js",
     "test:telegram": "node src/testTelegram.js",
     "reset:paper": "node src/resetPaper.js",
-    "stats": "node src/stats.js"
+    "stats": "node src/stats.js",
+    "summary": "node src/dailySummary.js"
   },
   "main": "src/index.js",
   "license": "MIT"

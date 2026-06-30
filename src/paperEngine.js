@@ -121,6 +121,15 @@ export class PaperEngine {
     }
 
     // ── E. No open position: guard duplicate processing ───────────────────
+    if (this.lastProcessedCandleTime === lastCandleTime) {
+      logInfo(`Баланс: ${this.balance} USDT`);
+      logInfo(`Символ: ${this.config.symbol}`);
+      logInfo(`Остання ціна: ${lastPrice} USDT`);
+      logInfo("Свічка вже оброблена, новий вхід не перевіряється");
+      return;
+    }
+
+    // New candle — run full analysis
     const signal = getSignal({ candles, config: this.config });
     const ind    = signal.indicators;
 
@@ -141,12 +150,6 @@ export class PaperEngine {
     logInfo(`Сигнал: ${signal.action}`);
     logInfo(`Причина: ${signal.reason}`);
 
-    if (this.lastProcessedCandleTime === lastCandleTime) {
-      logInfo("Свічка вже оброблена, новий вхід не перевіряється");
-      return;
-    }
-
-    // New candle — evaluate entry
     if (signal.action === "BUY" && ind) {
       const trade = calculateLongTrade({
         balance:    this.balance,
