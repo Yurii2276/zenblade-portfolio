@@ -67,9 +67,9 @@ export class PaperEngine {
       limit: config.candlesLimit,
     });
 
-    const lastPrice = candles[0].close;
+    const lastCandle = candles[candles.length - 1];
+    const lastPrice = lastCandle.close;
 
-    // --- A/B: Check open position ---
     if (this.position) {
       const { stopPrice, takePrice, entryPrice, size } = this.position;
       const unrealizedPnl = Math.round((lastPrice - entryPrice) * size * 100) / 100;
@@ -90,7 +90,6 @@ export class PaperEngine {
       return;
     }
 
-    // --- D: No open position — evaluate signal ---
     const signal = getSignal({ candles, config });
     const ind = signal.indicators;
 

@@ -1,35 +1,38 @@
+/**
+ * All functions expect candles/values in chronological order: oldest → newest.
+ * candles[candles.length - 1] is always the most recent candle.
+ */
+
 export function sma(values, period) {
   if (!values || values.length < period) return null;
-  const slice = values.slice(0, period);
+  const slice = values.slice(-period);
   const result = slice.reduce((sum, v) => sum + v, 0) / period;
   return Math.round(result * 100) / 100;
 }
 
 export function ema(values, period) {
   if (!values || values.length < period) return null;
-  const reversed = [...values].reverse();
   const k = 2 / (period + 1);
-  let emaVal = reversed.slice(0, period).reduce((sum, v) => sum + v, 0) / period;
-  for (let i = period; i < reversed.length; i++) {
-    emaVal = reversed[i] * k + emaVal * (1 - k);
+  let emaVal = values.slice(0, period).reduce((sum, v) => sum + v, 0) / period;
+  for (let i = period; i < values.length; i++) {
+    emaVal = values[i] * k + emaVal * (1 - k);
   }
   return Math.round(emaVal * 100) / 100;
 }
 
 export function rsi(values, period = 14) {
   if (!values || values.length < period + 1) return null;
-  const reversed = [...values].reverse();
   let gains = 0;
   let losses = 0;
   for (let i = 1; i <= period; i++) {
-    const diff = reversed[i] - reversed[i - 1];
+    const diff = values[i] - values[i - 1];
     if (diff >= 0) gains += diff;
     else losses += Math.abs(diff);
   }
   let avgGain = gains / period;
   let avgLoss = losses / period;
-  for (let i = period + 1; i < reversed.length; i++) {
-    const diff = reversed[i] - reversed[i - 1];
+  for (let i = period + 1; i < values.length; i++) {
+    const diff = values[i] - values[i - 1];
     const gain = diff >= 0 ? diff : 0;
     const loss = diff < 0 ? Math.abs(diff) : 0;
     avgGain = (avgGain * (period - 1) + gain) / period;
@@ -42,12 +45,11 @@ export function rsi(values, period = 14) {
 
 export function atr(candles, period = 14) {
   if (!candles || candles.length < period + 1) return null;
-  const reversed = [...candles].reverse();
   const trValues = [];
-  for (let i = 1; i < reversed.length; i++) {
-    const high = reversed[i].high;
-    const low = reversed[i].low;
-    const prevClose = reversed[i - 1].close;
+  for (let i = 1; i < candles.length; i++) {
+    const high = candles[i].high;
+    const low = candles[i].low;
+    const prevClose = candles[i - 1].close;
     const tr = Math.max(high - low, Math.abs(high - prevClose), Math.abs(low - prevClose));
     trValues.push(tr);
   }
@@ -61,7 +63,7 @@ export function atr(candles, period = 14) {
 
 export function volumeSma(candles, period = 20) {
   if (!candles || candles.length < period) return null;
-  const slice = candles.slice(0, period);
+  const slice = candles.slice(-period);
   const result = slice.reduce((sum, c) => sum + c.volume, 0) / period;
   return Math.round(result * 100) / 100;
 }

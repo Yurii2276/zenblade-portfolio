@@ -10,14 +10,15 @@ export function getSignal({ candles, config }) {
   }
 
   const closes = candles.map((c) => c.close);
+  const lastCandle = candles[candles.length - 1];
+  const lastClose = lastCandle.close;
+  const lastVolume = lastCandle.volume;
 
   const ema20 = ema(closes, config.emaFast);
   const ema50 = ema(closes, config.emaSlow);
   const rsi14 = rsi(closes, config.rsiPeriod);
   const atr14 = atr(candles, config.atrPeriod);
   const volumeSma20 = volumeSma(candles, config.volumePeriod);
-  const lastClose = candles[0].close;
-  const lastVolume = candles[0].volume;
 
   const indicators = {
     lastClose,

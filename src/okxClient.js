@@ -13,7 +13,7 @@ export async function fetchCandles({ symbol, bar, limit }) {
     throw new Error(`OKX API помилка: ${json.msg}`);
   }
 
-  return json.data.map(([ts, o, h, l, c, vol]) => ({
+  const candles = json.data.map(([ts, o, h, l, c, vol]) => ({
     time: Number(ts),
     open: parseFloat(o),
     high: parseFloat(h),
@@ -21,4 +21,8 @@ export async function fetchCandles({ symbol, bar, limit }) {
     close: parseFloat(c),
     volume: parseFloat(vol),
   }));
+
+  candles.sort((a, b) => a.time - b.time);
+
+  return candles;
 }
