@@ -1,0 +1,156 @@
+Продовжуємо ZenBlade Portfolio.
+
+Поточний backtest показав, що базова стратегія збиткова:
+BTC-USDT -30.60 USDT
+ETH-USDT -25.63 USDT
+SOL-USDT -21.05 USDT
+за ~2000 5m-свічок.
+
+Реальні ордери НЕ робити. OKX API ключі НЕ використовувати.
+
+Потрібно додати strategy profiles і backtest по профілях.
+
+1. Онови src/config.js
+
+Додай обʼєкт strategyProfiles:
+
+strategyProfiles: {
+  conservative: {
+    emaFast: 20,
+    emaSlow: 50,
+    minRsiForLong: 50,
+    maxRsiForLong: 62,
+    minVolumeFactor: 1.2,
+    atrStopMultiplier: 1.0,
+    atrTakeMultiplier: 1.8,
+    minScoreForEntry: 85
+  },
+  balanced: {
+    emaFast: 20,
+    emaSlow: 50,
+    minRsiForLong: 45,
+    maxRsiForLong: 65,
+    minVolumeFactor: 1.05,
+    atrStopMultiplier: 1.2,
+    atrTakeMultiplier: 1.8,
+    minScoreForEntry: 80
+  },
+  aggressive: {
+    emaFast: 9,
+    emaSlow: 21,
+    minRsiForLong: 42,
+    maxRsiForLong: 68,
+    minVolumeFactor: 0.9,
+    atrStopMultiplier: 1.0,
+    atrTakeMultiplier: 1.5,
+    minScoreForEntry: 70
+  }
+}
+
+Також додай:
+
+activeProfile: "balanced"
+
+Поточні параметри не видаляй, щоб npm start не зламався.
+
+2. Онови src/strategy.js
+
+Зроби так, щоб getSignal({ candles, config }) використовував параметри:
+
+config.emaFast
+config.emaSlow
+config.minRsiForLong
+config.maxRsiForLong
+config.minVolumeFactor
+
+А не жорстко EMA20/EMA50.
+
+У indicators поверни також універсальні назви:
+
+emaFast
+emaSlow
+
+Але для сумісності можеш залишити ema20 і ema50, якщо вони вже використовуються в інших файлах.
+
+Reason має писати не тільки EMA20/EMA50, а динамічно:
+
+"Немає long-тренду: EMA fast нижче або дорівнює EMA slow"
+
+3. Онови src/portfolioScanner.js
+
+Score має використовувати:
+
+config.emaFast
+config.emaSlow
+config.minRsiForLong
+config.maxRsiForLong
+config.minVolumeFactor
+
+Якщо є config.minScoreForEntry — використовуй його як поріг strong setup.
+Якщо немає — залиш 80.
+
+4. Створи файл:
+
+src/backtestProfiles.js
+
+Логіка:
+
+- імпортуй config
+- імпортуй fetchHistoricalCandles
+- імпортуй getSignal
+- імпортуй calculateLongTrade
+
+Для кожного профілю з config.strategyProfiles:
+- створити profileConfig = { ...config, ...profile, activeProfile: profileName }
+- для кожного symbol з config.symbols:
+   - завантажити історичні свічки через fetchHistoricalCandles({
+       symbol,
+       bar: config.bar,
+       targetLimit: config.backtestCandlesLimit
+     })
+   - прогнати backtest тією ж логікою, що в src/backtest.js
+   - порахувати:
+     Symbol
+     Profile
+     Final Balance
+     Total Trades
+     Wins
+     Losses
+     Win Rate
+     Net PnL
+     Fees
+     Profit Factor
+     Max Drawdown
+     Average Trade
+     Best Trade
+     Worst Trade
+
+5. У кінці backtestProfiles.js вивести рейтинг:
+
+=== Profile Ranking ===
+
+Сортувати всі результати за Net PnL від кращого до гіршого.
+
+Також вивести окремо:
+
+Best profile overall:
+Profile:
+Symbol:
+Net PnL:
+Win Rate:
+Profit Factor:
+Max Drawdown:
+
+6. Онови package.json
+
+Додай script:
+
+"backtest:profiles": "node src/backtestProfiles.js"
+
+Не видаляй існуючі scripts.
+
+7. Запусти:
+
+npm run backtest:profiles
+
+8. Покажи повний результат.

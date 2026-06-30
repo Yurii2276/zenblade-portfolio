@@ -12,11 +12,11 @@ async function scanSymbol(symbol, config) {
   const signal = getSignal({ candles, config });
   const ind    = signal.indicators ?? {};
 
-  const { lastClose, ema20, ema50, rsi14, atr14, lastVolume, volumeSma20 } = ind;
+  const { lastClose, emaFast, emaSlow, rsi14, atr14, lastVolume, volumeSma20 } = ind;
 
   let score = 0;
-  if (ema20 != null && ema50 != null && ema20 > ema50)                                  score += 30;
-  if (lastClose != null && ema20 != null && lastClose > ema20)                          score += 20;
+  if (emaFast != null && emaSlow != null && emaFast > emaSlow)                           score += 30;
+  if (lastClose != null && emaFast != null && lastClose > emaFast)                       score += 20;
   if (rsi14 != null && rsi14 >= config.minRsiForLong && rsi14 <= config.maxRsiForLong)  score += 20;
   if (lastVolume != null && volumeSma20 != null &&
       lastVolume >= volumeSma20 * config.minVolumeFactor)                                score += 15;
@@ -50,7 +50,8 @@ export async function scanPortfolio(config) {
   return results;
 }
 
-function printResults(results) {
+function printResults(results, config) {
+  const threshold = config.minScoreForEntry ?? 80;
   console.log("=== ZenBlade Portfolio Scanner ===\n");
 
   results.forEach((r, i) => {
@@ -59,18 +60,18 @@ function printResults(results) {
     console.log(`   Score:        ${r.score}`);
     console.log(`   Signal:       ${r.action}`);
     console.log(`   Price:        ${ind.lastClose  ?? "N/A"}`);
-    console.log(`   EMA20:        ${ind.ema20      ?? "N/A"}`);
-    console.log(`   EMA50:        ${ind.ema50      ?? "N/A"}`);
+    console.log(`   EMA fast:     ${ind.emaFast    ?? "N/A"}`);
+    console.log(`   EMA slow:     ${ind.emaSlow    ?? "N/A"}`);
     console.log(`   RSI14:        ${ind.rsi14      ?? "N/A"}`);
     console.log(`   ATR14:        ${ind.atr14      ?? "N/A"}`);
     console.log(`   Volume:       ${ind.lastVolume  ?? "N/A"}`);
-    console.log(`   Volume SMA20: ${ind.volumeSma20 ?? "N/A"}`);
+    console.log(`   Volume SMA:   ${ind.volumeSma20 ?? "N/A"}`);
     console.log(`   Reason:       ${r.reason}`);
     console.log();
   });
 
   const best     = results[0];
-  const isStrong = best && best.score >= 80;
+  const isStrong = best && best.score >= threshold;
 
   console.log("Best candidate:");
   if (isStrong) {
@@ -84,5 +85,5 @@ function printResults(results) {
 // CLI entry point — only runs when executed directly
 if (process.argv[1].endsWith("portfolioScanner.js")) {
   const results = await scanPortfolio(defaultConfig);
-  printResults(results);
+  printResults(results, defaultConfig);
 }

@@ -16,7 +16,8 @@
     "reset:paper": "node src/resetPaper.js",
     "stats": "node src/stats.js",
     "summary": "node src/dailySummary.js",
-    "backtest": "node src/backtest.js"
+    "backtest": "node src/backtest.js",
+    "backtest:profiles": "node src/backtestProfiles.js"
   },
   "main": "src/index.js",
   "license": "MIT"

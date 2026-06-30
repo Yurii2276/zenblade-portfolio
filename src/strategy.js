@@ -9,21 +9,24 @@ export function getSignal({ candles, config }) {
     };
   }
 
-  const closes = candles.map((c) => c.close);
+  const closes     = candles.map((c) => c.close);
   const lastCandle = candles[candles.length - 1];
-  const lastClose = lastCandle.close;
+  const lastClose  = lastCandle.close;
   const lastVolume = lastCandle.volume;
 
-  const ema20 = ema(closes, config.emaFast);
-  const ema50 = ema(closes, config.emaSlow);
-  const rsi14 = rsi(closes, config.rsiPeriod);
-  const atr14 = atr(candles, config.atrPeriod);
-  const volumeSma20 = volumeSma(candles, config.volumePeriod);
+  const emaFastVal   = ema(closes, config.emaFast);
+  const emaSlowVal   = ema(closes, config.emaSlow);
+  const rsi14        = rsi(closes, config.rsiPeriod);
+  const atr14        = atr(candles, config.atrPeriod);
+  const volumeSma20  = volumeSma(candles, config.volumePeriod);
 
   const indicators = {
     lastClose,
-    ema20,
-    ema50,
+    emaFast:    emaFastVal,
+    emaSlow:    emaSlowVal,
+    // keep legacy names for backward compatibility with paperEngine, stats, etc.
+    ema20:      emaFastVal,
+    ema50:      emaSlowVal,
     rsi14,
     atr14,
     lastVolume,
@@ -31,8 +34,8 @@ export function getSignal({ candles, config }) {
   };
 
   const allConditions =
-    ema20 > ema50 &&
-    lastClose > ema20 &&
+    emaFastVal > emaSlowVal &&
+    lastClose  > emaFastVal &&
     rsi14 >= config.minRsiForLong &&
     rsi14 <= config.maxRsiForLong &&
     lastVolume >= volumeSma20 * config.minVolumeFactor &&
@@ -42,16 +45,16 @@ export function getSignal({ candles, config }) {
   if (allConditions) {
     return {
       action: "BUY",
-      reason: "EMA20 вище EMA50, ціна вище EMA20, RSI у робочій зоні, обʼєм підтверджує рух",
+      reason: `EMA fast вище EMA slow, ціна вище EMA fast, RSI у робочій зоні, обʼєм підтверджує рух`,
       indicators,
     };
   }
 
   let reason;
-  if (ema20 <= ema50) {
-    reason = "Немає long-тренду: EMA20 нижче або дорівнює EMA50";
-  } else if (lastClose <= ema20) {
-    reason = "Ціна нижче EMA20, імпульс недостатній";
+  if (emaFastVal <= emaSlowVal) {
+    reason = "Немає long-тренду: EMA fast нижче або дорівнює EMA slow";
+  } else if (lastClose <= emaFastVal) {
+    reason = "Ціна нижче EMA fast, імпульс недостатній";
   } else if (rsi14 < config.minRsiForLong) {
     reason = "RSI занизький для входу";
   } else if (rsi14 > config.maxRsiForLong) {
