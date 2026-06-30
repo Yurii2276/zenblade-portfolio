@@ -6,5 +6,13 @@ console.log("ZenBlade Portfolio стартує в paper mode");
 console.log(`Mode: ${config.mode}`);
 console.log(`Symbol: ${config.symbol}`);
 
-const engine = new PaperEngine();
-engine.runOnce();
+async function main() {
+  try {
+    const engine = new PaperEngine();
+    await engine.runOnce();
+  } catch (err) {
+    console.error("Помилка запуску:", err.message);
+  }
+}
+
+main();

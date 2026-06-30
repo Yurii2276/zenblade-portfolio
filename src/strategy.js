@@ -1,6 +1,13 @@
-export function getSignal(marketData) {
+export function getSignal({ candles }) {
+  if (!candles || candles.length < 20) {
+    return {
+      action: "HOLD",
+      reason: "Недостатньо свічок",
+    };
+  }
+
   return {
     action: "HOLD",
-    reason: "Недостатньо даних для входу",
+    reason: "Дані отримано, стратегія ще не активна",
   };
 }

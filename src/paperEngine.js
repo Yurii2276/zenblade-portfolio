@@ -1,6 +1,7 @@
 import { config } from "./config.js";
 import { getSignal } from "./strategy.js";
 import { logInfo } from "./logger.js";
+import { fetchCandles } from "./okxClient.js";
 
 export class PaperEngine {
   constructor() {
@@ -9,17 +10,22 @@ export class PaperEngine {
     this.trades = [];
   }
 
-  runOnce() {
-    const marketData = {
+  async runOnce() {
+    const candles = await fetchCandles({
       symbol: config.symbol,
-      price: 65000,
-      timestamp: new Date().toISOString(),
-    };
+      bar: config.bar,
+      limit: config.candlesLimit,
+    });
 
-    const signal = getSignal(marketData);
+    const lastCandle = candles[0];
+    const lastPrice = lastCandle.close;
+
+    const signal = getSignal({ candles });
 
     logInfo(`Баланс: ${this.balance} USDT`);
-    logInfo(`Символ: ${marketData.symbol}`);
+    logInfo(`Символ: ${config.symbol}`);
+    logInfo(`Остання ціна: ${lastPrice} USDT`);
+    logInfo(`Свічок отримано: ${candles.length}`);
     logInfo(`Сигнал: ${signal.action}`);
     logInfo(`Причина: ${signal.reason}`);
   }
