@@ -7,4 +7,9 @@ export const config = {
   stopLossPct: 0.004,
   bar: "5m",
   candlesLimit: 100,
+  emaFast: 20,
+  emaSlow: 50,
+  rsiPeriod: 14,
+  atrPeriod: 14,
+  volumePeriod: 20,
 };
