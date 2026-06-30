@@ -13,16 +13,24 @@ export async function fetchCandles({ symbol, bar, limit }) {
     throw new Error(`OKX API помилка: ${json.msg}`);
   }
 
-  const candles = json.data.map(([ts, o, h, l, c, vol]) => ({
-    time: Number(ts),
-    open: parseFloat(o),
-    high: parseFloat(h),
-    low: parseFloat(l),
-    close: parseFloat(c),
-    volume: parseFloat(vol),
+  const parsed = json.data.map(([ts, o, h, l, c, vol, , , confirm]) => ({
+    time:    Number(ts),
+    open:    parseFloat(o),
+    high:    parseFloat(h),
+    low:     parseFloat(l),
+    close:   parseFloat(c),
+    volume:  parseFloat(vol),
+    confirm: confirm === "1" || confirm === 1 ? 1 : 0,
   }));
 
-  candles.sort((a, b) => a.time - b.time);
+  parsed.sort((a, b) => a.time - b.time);
 
-  return candles;
+  const confirmed = parsed.filter((c) => c.confirm === 1);
+
+  if (confirmed.length === 0) {
+    console.log("Warning: no confirmed candles returned by OKX");
+    return parsed;
+  }
+
+  return confirmed;
 }

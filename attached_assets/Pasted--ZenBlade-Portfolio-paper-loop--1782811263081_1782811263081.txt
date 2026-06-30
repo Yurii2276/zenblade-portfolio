@@ -1,0 +1,146 @@
+Продовжуємо ZenBlade Portfolio.
+
+Потрібно додати безпечний paper loop для постійного запуску.
+
+Реальні ордери НЕ робити. OKX API ключі НЕ використовувати.
+
+Головне правило:
+Бот може перевіряти ринок часто, але новий BUY-сигнал має оброблятися тільки один раз на нову 5m-свічку.
+
+1. Онови src/okxClient.js
+
+У нормалізований candle додай поле:
+
+confirm
+
+OKX candle формат:
+[
+  ts,
+  o,
+  h,
+  l,
+  c,
+  vol,
+  volCcy,
+  volCcyQuote,
+  confirm
+]
+
+Повернути:
+{
+  time,
+  open,
+  high,
+  low,
+  close,
+  volume,
+  confirm
+}
+
+Після парсингу:
+- відсортуй old -> new
+- якщо є confirmed candles, тобто confirm === "1" або confirm === 1, використовуй тільки confirmed candles
+- якщо confirmed candles немає, поверни всі candles, але додай warning у console.log:
+"Warning: no confirmed candles returned by OKX"
+
+2. Онови data/state.json структуру
+
+Додай поле:
+
+"lastProcessedCandleTime": null
+
+Дефолтний state має бути:
+
+{
+  "balance": 1000,
+  "openPosition": null,
+  "lastProcessedCandleTime": null
+}
+
+3. Онови src/resetPaper.js
+
+Щоб він створював state саме з lastProcessedCandleTime: null.
+
+4. Онови src/paperEngine.js
+
+Коли читаєш state:
+- якщо lastProcessedCandleTime відсутній, додай null
+
+У runOnce():
+
+A. Отримай candles.
+B. Візьми lastCandle = candles[candles.length - 1].
+C. lastCandleTime = lastCandle.time.
+
+D. Якщо є openPosition:
+- перевіряй TP/SL завжди, навіть якщо свічка вже оброблена.
+- якщо позиція закрилась, записуй угоду як зараз.
+
+E. Якщо openPosition немає:
+- якщо state.lastProcessedCandleTime === lastCandleTime:
+   - НЕ відкривати нову позицію
+   - вивести:
+     "Свічка вже оброблена, новий вхід не перевіряється"
+   - але все одно показати останню ціну та індикатори
+- якщо це нова свічка:
+   - отримати signal
+   - якщо BUY — відкрити paper-position
+   - якщо HOLD — просто лог
+   - після перевірки сигналу записати:
+     state.lastProcessedCandleTime = lastCandleTime
+     saveState(state)
+
+Важливо:
+- TP/SL перевірка має працювати незалежно від lastProcessedCandleTime.
+- Новий BUY не можна відкривати двічі на одній і тій самій свічці.
+
+5. Створи файл:
+src/paperLoop.js
+
+Логіка:
+
+- імпортуй config, PaperEngine, logInfo
+- створи engine = new PaperEngine(config)
+- intervalMs = 60 * 1000
+- зроби async function tick()
+- у tick():
+   - виведи розділювач:
+     "----- Paper loop tick -----"
+   - await engine.runOnce()
+   - якщо помилка — console.error з датою
+- одразу виклич tick()
+- потім setInterval(tick, intervalMs)
+
+Вивести при старті:
+
+ZenBlade Paper Loop started
+Symbol:
+Bar:
+Interval: 60 seconds
+Mode: paper
+
+6. Онови package.json
+
+Додай script:
+
+"paper:loop": "node src/paperLoop.js"
+
+Не видаляй існуючі:
+start
+test:signal
+test:engine
+reset:paper
+stats
+
+7. Запусти:
+
+npm run reset:paper
+npm start
+npm start
+npm run stats
+
+Пояснення:
+другий npm start має показати, що ця сама свічка вже оброблена і повторний вхід не перевіряється.
+
+8. Не запускай paper:loop надовго. Просто перевір, що команда існує.
+Покажи результати.

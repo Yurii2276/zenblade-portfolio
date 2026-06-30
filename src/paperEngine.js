@@ -5,7 +5,11 @@ import { logInfo } from "./logger.js";
 import { fetchCandles } from "./okxClient.js";
 import { calculateLongTrade } from "./riskManager.js";
 
-const DEFAULT_STATE = { balance: 1000, openPosition: null };
+const DEFAULT_STATE = {
+  balance: 1000,
+  openPosition: null,
+  lastProcessedCandleTime: null,
+};
 
 function loadJson(filePath, defaultValue) {
   try {
@@ -24,25 +28,30 @@ export class PaperEngine {
   constructor(config, options = {}) {
     this.config = config;
     this.candlesProvider = options.candlesProvider || null;
-    this.statePath = path.resolve(options.statePath || "data/state.json");
+    this.statePath  = path.resolve(options.statePath  || "data/state.json");
     this.tradesPath = path.resolve(options.tradesPath || "data/trades.json");
 
     const state = loadJson(this.statePath, DEFAULT_STATE);
-    this.balance = typeof state.balance === "number" ? state.balance : DEFAULT_STATE.balance;
-    this.position = state.openPosition ?? null;
-    this.trades = loadJson(this.tradesPath, []);
+    this.balance                  = typeof state.balance === "number" ? state.balance : DEFAULT_STATE.balance;
+    this.position                 = state.openPosition ?? null;
+    this.lastProcessedCandleTime  = state.lastProcessedCandleTime ?? null;
+    this.trades                   = loadJson(this.tradesPath, []);
   }
 
   saveState() {
-    saveJson(this.statePath, { balance: this.balance, openPosition: this.position });
+    saveJson(this.statePath, {
+      balance:                 this.balance,
+      openPosition:            this.position,
+      lastProcessedCandleTime: this.lastProcessedCandleTime,
+    });
     saveJson(this.tradesPath, this.trades);
   }
 
   closePosition(exitPrice, reason) {
     const { entryPrice, size } = this.position;
     const grossPnl = (exitPrice - entryPrice) * size;
-    const fees = (entryPrice * size + exitPrice * size) * this.config.feeRate;
-    const netPnl = Math.round((grossPnl - fees) * 100) / 100;
+    const fees     = (entryPrice * size + exitPrice * size) * this.config.feeRate;
+    const netPnl   = Math.round((grossPnl - fees) * 100) / 100;
 
     this.balance = Math.round((this.balance + netPnl) * 100) / 100;
 
@@ -50,10 +59,10 @@ export class PaperEngine {
       ...this.position,
       exitPrice,
       closeReason: reason,
-      grossPnl: Math.round(grossPnl * 100) / 100,
-      fees: Math.round(fees * 100) / 100,
+      grossPnl:    Math.round(grossPnl * 100) / 100,
+      fees:        Math.round(fees     * 100) / 100,
       netPnl,
-      closedAt: new Date().toISOString(),
+      closedAt:    new Date().toISOString(),
     };
 
     this.trades.push(trade);
@@ -66,13 +75,15 @@ export class PaperEngine {
       ? await this.candlesProvider()
       : await fetchCandles({
           symbol: this.config.symbol,
-          bar: this.config.bar,
-          limit: this.config.candlesLimit,
+          bar:    this.config.bar,
+          limit:  this.config.candlesLimit,
         });
 
-    const lastCandle = candles[candles.length - 1];
-    const lastPrice = lastCandle.close;
+    const lastCandle     = candles[candles.length - 1];
+    const lastPrice      = lastCandle.close;
+    const lastCandleTime = lastCandle.time;
 
+    // ── D. Open position: always check TP/SL ─────────────────────────────
     if (this.position) {
       const { stopPrice, takePrice, entryPrice, size } = this.position;
       const unrealizedPnl = Math.round((lastPrice - entryPrice) * size * 100) / 100;
@@ -93,8 +104,9 @@ export class PaperEngine {
       return;
     }
 
+    // ── E. No open position: guard duplicate processing ───────────────────
     const signal = getSignal({ candles, config: this.config });
-    const ind = signal.indicators;
+    const ind    = signal.indicators;
 
     logInfo(`Баланс: ${this.balance} USDT`);
     logInfo(`Символ: ${this.config.symbol}`);
@@ -113,29 +125,37 @@ export class PaperEngine {
     logInfo(`Сигнал: ${signal.action}`);
     logInfo(`Причина: ${signal.reason}`);
 
+    if (this.lastProcessedCandleTime === lastCandleTime) {
+      logInfo("Свічка вже оброблена, новий вхід не перевіряється");
+      return;
+    }
+
+    // New candle — evaluate entry
     if (signal.action === "BUY" && ind) {
       const trade = calculateLongTrade({
-        balance: this.balance,
+        balance:    this.balance,
         entryPrice: lastPrice,
-        atr: ind.atr14,
-        config: this.config,
+        atr:        ind.atr14,
+        config:     this.config,
       });
 
       this.position = {
-        symbol: this.config.symbol,
-        side: "LONG",
-        entryPrice: trade.entryPrice,
-        stopPrice: trade.stopPrice,
-        takePrice: trade.takePrice,
-        size: trade.size,
+        symbol:        this.config.symbol,
+        side:          "LONG",
+        entryPrice:    trade.entryPrice,
+        stopPrice:     trade.stopPrice,
+        takePrice:     trade.takePrice,
+        size:          trade.size,
         positionValue: trade.positionValue,
-        openedAt: new Date().toISOString(),
-        reason: signal.reason,
+        openedAt:      new Date().toISOString(),
+        reason:        signal.reason,
       };
-
-      this.saveState();
 
       logInfo(`Paper-position відкрита: entry=${trade.entryPrice} | stop=${trade.stopPrice} | take=${trade.takePrice} | size=${trade.size} | value=${trade.positionValue} USDT`);
     }
+
+    // Mark candle as processed regardless of BUY/HOLD
+    this.lastProcessedCandleTime = lastCandleTime;
+    this.saveState();
   }
 }

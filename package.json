@@ -8,7 +8,8 @@
     "test:signal": "node src/testSignal.js",
     "test:engine": "node src/testPaperEngine.js",
     "reset:paper": "node src/resetPaper.js",
-    "stats": "node src/stats.js"
+    "stats": "node src/stats.js",
+    "paper:loop": "node src/paperLoop.js"
   },
   "main": "src/index.js",
   "license": "MIT"

@@ -1,4 +1,5 @@
 {
   "balance": 1000,
-  "openPosition": null
+  "openPosition": null,
+  "lastProcessedCandleTime": 1782810900000
 }
