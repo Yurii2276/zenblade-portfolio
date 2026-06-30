@@ -1,0 +1,139 @@
+Продовжуємо ZenBlade Portfolio.
+
+Потрібно додати тест portfolio paper engine, щоб перевірити сценарій:
+scanner знаходить strong BUY setup → portfolio engine відкриває paper-position.
+
+Реальні ордери НЕ робити. OKX API ключі НЕ використовувати.
+
+1. Онови src/portfolioPaperEngine.js
+
+Зміни runPortfolioOnce так, щоб вона приймала optional options:
+
+export async function runPortfolioOnce(options = {}) {
+
+Підтримай такі options:
+- scanProvider
+- statePath
+- tradesPath
+
+Логіка:
+- якщо options.statePath передано — читати state звідти, інакше data/state.json
+- якщо options.tradesPath передано — PaperEngine має отримати цей tradesPath
+- якщо options.scanProvider передано — використовувати його замість scanPortfolio(config)
+
+Тобто:
+
+const results = options.scanProvider
+  ? await options.scanProvider()
+  : await scanPortfolio(config)
+
+Коли створюєш PaperEngine для відкриття позиції, передай:
+
+new PaperEngine(
+  { ...config, symbol: best.symbol },
+  {
+    candlesProvider: async () => best.candles,
+    statePath,
+    tradesPath
+  }
+)
+
+Коли моніториш існуючу позицію, теж передай statePath і tradesPath.
+
+Звичайний npm run portfolio:start має працювати як раніше.
+
+2. Створи файл:
+src/testPortfolioEngine.js
+
+Логіка тесту:
+
+A. Використовувати тестові файли:
+data/test-portfolio-state.json
+data/test-portfolio-trades.json
+
+Перед тестом записати:
+
+{
+  "balance": 1000,
+  "openPosition": null,
+  "lastProcessedCandleTime": null
+}
+
+і trades:
+[]
+
+B. Імпортувати:
+- runPortfolioOnce з portfolioPaperEngine.js
+- createBullishCandles з mockScenarios.js
+- getSignal з strategy.js
+- config
+
+C. Створити candles = createBullishCandles()
+
+D. Отримати signal = getSignal({ candles, config })
+
+E. Створити fake scanProvider, який повертає масив:
+
+[
+  {
+    symbol: "SOL-USDT",
+    action: signal.action,
+    score: 95,
+    reason: signal.reason,
+    candles,
+    indicators: signal.indicators
+  },
+  {
+    symbol: "BTC-USDT",
+    action: "HOLD",
+    score: 40,
+    reason: "Mock weak setup",
+    candles,
+    indicators: signal.indicators
+  }
+]
+
+F. Викликати:
+
+await runPortfolioOnce({
+  scanProvider,
+  statePath: "data/test-portfolio-state.json",
+  tradesPath: "data/test-portfolio-trades.json"
+})
+
+G. Після запуску прочитати test-portfolio-state.json і перевірити:
+- openPosition не null
+- openPosition.symbol === "SOL-USDT"
+- openPosition.side === "LONG"
+- balance === 1000
+- trades.length === 0
+
+H. Вивести:
+
+PORTFOLIO OPEN TEST: OK
+Symbol:
+Entry:
+Stop:
+Take:
+Size:
+Position Value:
+
+I. Якщо перевірка не проходить — кинути Error з чітким текстом.
+
+J. Після тесту видалити test-portfolio-state.json і test-portfolio-trades.json.
+
+3. Онови package.json
+
+Додай script:
+
+"test:portfolio": "node src/testPortfolioEngine.js"
+
+Не видаляй існуючі scripts.
+
+4. Запусти:
+
+npm run test:portfolio
+npm run portfolio:start
+npm run stats
+
+5. Покажи результати.

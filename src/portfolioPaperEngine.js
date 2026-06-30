@@ -5,37 +5,44 @@ import { scanPortfolio } from "./portfolioScanner.js";
 import { PaperEngine } from "./paperEngine.js";
 import { logInfo } from "./logger.js";
 
-const STATE_PATH = path.resolve("data/state.json");
+const DEFAULT_STATE_PATH  = path.resolve("data/state.json");
+const DEFAULT_TRADES_PATH = path.resolve("data/trades.json");
 
 const DEFAULT_STATE = { balance: 1000, openPosition: null, lastProcessedCandleTime: null };
 
-function loadState() {
+function loadState(statePath) {
   try {
-    const raw = fs.readFileSync(STATE_PATH, "utf-8");
+    const raw = fs.readFileSync(statePath, "utf-8");
     return JSON.parse(raw);
   } catch {
-    fs.writeFileSync(STATE_PATH, JSON.stringify(DEFAULT_STATE, null, 2));
+    fs.writeFileSync(statePath, JSON.stringify(DEFAULT_STATE, null, 2));
     return DEFAULT_STATE;
   }
 }
 
-export async function runPortfolioOnce() {
-  const state = loadState();
+export async function runPortfolioOnce(options = {}) {
+  const statePath  = options.statePath  ?? DEFAULT_STATE_PATH;
+  const tradesPath = options.tradesPath ?? DEFAULT_TRADES_PATH;
+
+  const state = loadState(statePath);
 
   // ── B. Existing open position: monitor TP/SL ──────────────────────────
   if (state.openPosition) {
     logInfo("Portfolio mode: existing position monitored");
-    const engine = new PaperEngine({
-      ...config,
-      symbol: state.openPosition.symbol,
-    });
+    const engine = new PaperEngine(
+      { ...config, symbol: state.openPosition.symbol },
+      { statePath, tradesPath }
+    );
     await engine.runOnce();
     return;
   }
 
   // ── C. No open position: scan all symbols ─────────────────────────────
-  const results = await scanPortfolio(config);
-  const best    = results[0];
+  const results = options.scanProvider
+    ? await options.scanProvider()
+    : await scanPortfolio(config);
+
+  const best = results[0];
 
   logInfo("Best portfolio candidate:");
   logInfo(`  Symbol: ${best?.symbol ?? "N/A"}`);
@@ -47,7 +54,11 @@ export async function runPortfolioOnce() {
   if (best && best.score >= 80 && best.action === "BUY") {
     const engine = new PaperEngine(
       { ...config, symbol: best.symbol },
-      { candlesProvider: async () => best.candles }
+      {
+        candlesProvider: async () => best.candles,
+        statePath,
+        tradesPath,
+      }
     );
     await engine.runOnce();
     logInfo("Portfolio paper position opened or processed");

@@ -11,6 +11,7 @@
     "portfolio:loop": "node src/portfolioLoop.js",
     "test:signal": "node src/testSignal.js",
     "test:engine": "node src/testPaperEngine.js",
+    "test:portfolio": "node src/testPortfolioEngine.js",
     "test:telegram": "node src/testTelegram.js",
     "reset:paper": "node src/resetPaper.js",
     "stats": "node src/stats.js",
