@@ -4,6 +4,7 @@ import { getSignal } from "./strategy.js";
 import { logInfo } from "./logger.js";
 import { fetchCandles } from "./okxClient.js";
 import { calculateLongTrade } from "./riskManager.js";
+import { sendTelegramMessage } from "./telegram.js";
 
 const DEFAULT_STATE = {
   balance: 1000,
@@ -47,7 +48,7 @@ export class PaperEngine {
     saveJson(this.tradesPath, this.trades);
   }
 
-  closePosition(exitPrice, reason) {
+  async closePosition(exitPrice, reason) {
     const { entryPrice, size } = this.position;
     const grossPnl = (exitPrice - entryPrice) * size;
     const fees     = (entryPrice * size + exitPrice * size) * this.config.feeRate;
@@ -67,6 +68,21 @@ export class PaperEngine {
 
     this.trades.push(trade);
     logInfo(`Позицію закрито: ${reason} | exitPrice: ${exitPrice} | netPnL: ${netPnl} USDT`);
+
+    if (this.config.telegramEnabled && this.config.notifyOnClose) {
+      await sendTelegramMessage(
+        `${reason === "TAKE_PROFIT" ? "✅" : "🔴"} ZenBlade PAPER CLOSE\n` +
+        `Symbol: ${this.config.symbol}\n` +
+        `Exit Reason: ${reason}\n` +
+        `Entry: ${entryPrice}\n` +
+        `Exit: ${exitPrice}\n` +
+        `Gross PnL: ${Math.round(grossPnl * 100) / 100} USDT\n` +
+        `Fees: ${Math.round(fees * 100) / 100} USDT\n` +
+        `Net PnL: ${netPnl} USDT\n` +
+        `Balance: ${this.balance} USDT`
+      );
+    }
+
     this.position = null;
   }
 
@@ -89,9 +105,9 @@ export class PaperEngine {
       const unrealizedPnl = Math.round((lastPrice - entryPrice) * size * 100) / 100;
 
       if (lastPrice <= stopPrice) {
-        this.closePosition(lastPrice, "STOP_LOSS");
+        await this.closePosition(lastPrice, "STOP_LOSS");
       } else if (lastPrice >= takePrice) {
-        this.closePosition(lastPrice, "TAKE_PROFIT");
+        await this.closePosition(lastPrice, "TAKE_PROFIT");
       } else {
         logInfo(`Відкрита позиція: entry=${entryPrice} | stop=${stopPrice} | take=${takePrice} | size=${size} | unrealizedPnL=${unrealizedPnl} USDT`);
       }
@@ -152,6 +168,19 @@ export class PaperEngine {
       };
 
       logInfo(`Paper-position відкрита: entry=${trade.entryPrice} | stop=${trade.stopPrice} | take=${trade.takePrice} | size=${trade.size} | value=${trade.positionValue} USDT`);
+
+      if (this.config.telegramEnabled && this.config.notifyOnBuy) {
+        await sendTelegramMessage(
+          `🟢 ZenBlade PAPER BUY\n` +
+          `Symbol: ${this.config.symbol}\n` +
+          `Entry: ${trade.entryPrice}\n` +
+          `Stop: ${trade.stopPrice}\n` +
+          `Take: ${trade.takePrice}\n` +
+          `Size: ${trade.size}\n` +
+          `Position Value: ${trade.positionValue} USDT\n` +
+          `Reason: ${signal.reason}`
+        );
+      }
     }
 
     // Mark candle as processed regardless of BUY/HOLD

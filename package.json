@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
+    "paper:loop": "node src/paperLoop.js",
     "test:signal": "node src/testSignal.js",
     "test:engine": "node src/testPaperEngine.js",
+    "test:telegram": "node src/testTelegram.js",
     "reset:paper": "node src/resetPaper.js",
-    "stats": "node src/stats.js",
-    "paper:loop": "node src/paperLoop.js"
+    "stats": "node src/stats.js"
   },
   "main": "src/index.js",
   "license": "MIT"

@@ -1,0 +1,135 @@
+Продовжуємо ZenBlade Portfolio.
+
+Потрібно додати Telegram notifications для paper mode.
+
+Реальні ордери НЕ робити. OKX API ключі НЕ використовувати.
+
+1. Створи файл:
+src/telegram.js
+
+У ньому реалізуй функцію:
+
+sendTelegramMessage(message)
+
+Логіка:
+- взяти TELEGRAM_BOT_TOKEN з process.env.TELEGRAM_BOT_TOKEN
+- взяти TELEGRAM_CHAT_ID з process.env.TELEGRAM_CHAT_ID
+- якщо одного з них немає:
+  - вивести в console.log:
+    "Telegram disabled: TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID missing"
+  - не кидати помилку
+  - повернути false
+
+- якщо обидва є:
+  - зробити fetch:
+    https://api.telegram.org/bot${token}/sendMessage
+  - method POST
+  - content-type application/json
+  - body:
+    {
+      chat_id: chatId,
+      text: message,
+      parse_mode: "HTML"
+    }
+
+- якщо Telegram повернув помилку, вивести її в console.error
+- повернути true/false
+
+2. Онови src/config.js
+
+Додай:
+
+telegramEnabled: true
+notifyOnHold: false
+notifyOnBuy: true
+notifyOnClose: true
+notifyOnLoopStart: true
+
+Поточні параметри не видаляй.
+
+3. Онови src/paperEngine.js
+
+Імпортуй sendTelegramMessage.
+
+Коли відкривається paper LONG позиція, якщо config.telegramEnabled && config.notifyOnBuy:
+
+Надіслати повідомлення:
+
+🟢 ZenBlade PAPER BUY
+Symbol: BTC-USDT
+Entry:
+Stop:
+Take:
+Size:
+Position Value:
+Reason:
+
+Коли позиція закривається TAKE_PROFIT або STOP_LOSS, якщо config.telegramEnabled && config.notifyOnClose:
+
+Надіслати повідомлення:
+
+✅ ZenBlade PAPER CLOSE
+Symbol:
+Exit Reason:
+Entry:
+Exit:
+Gross PnL:
+Fees:
+Net PnL:
+Balance:
+
+Якщо HOLD — Telegram НЕ надсилати, якщо notifyOnHold === false.
+
+4. Онови src/paperLoop.js
+
+При старті loop, якщо config.telegramEnabled && config.notifyOnLoopStart:
+
+Надіслати повідомлення:
+
+⚙️ ZenBlade Paper Loop started
+Symbol:
+Bar:
+Mode:
+Interval: 60 seconds
+
+5. Створи файл:
+src/testTelegram.js
+
+Логіка:
+- імпортуй sendTelegramMessage
+- виклич sendTelegramMessage("✅ ZenBlade Telegram test message")
+- якщо повернуло true:
+  console.log("Telegram test sent")
+- якщо false:
+  console.log("Telegram test skipped or failed")
+
+6. Онови package.json
+
+Додай script:
+
+"test:telegram": "node src/testTelegram.js"
+
+Не видаляй існуючі:
+start
+paper:loop
+test:signal
+test:engine
+reset:paper
+stats
+
+7. Запусти:
+
+npm run test:telegram
+
+Поки TELEGRAM_BOT_TOKEN і TELEGRAM_CHAT_ID не додані в Replit Secrets, має бути не помилка, а нормальне повідомлення:
+
+Telegram disabled: TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID missing
+Telegram test skipped or failed
+
+8. Потім запусти:
+
+npm start
+
+Перевір, що npm start не падає, навіть якщо Telegram Secrets ще не додані.
+
+Покажи результати.
