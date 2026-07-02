@@ -7,7 +7,7 @@ const candles = createBullishCandles();
 const htfCandles = createBullishCandles();
 const validActions = new Set(["HOLD", "BUY"]);
 
-for (const strategyName of ["trendMomentum", "trendPullback"]) {
+for (const strategyName of ["trendMomentum", "trendPullback", "breakoutRetest"]) {
   const signal = getStrategySignal({
     strategyName,
     candles,

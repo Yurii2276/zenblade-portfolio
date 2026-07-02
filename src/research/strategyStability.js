@@ -182,20 +182,35 @@ function prepareSegment(candles, htfCandles, cfg) {
 function hasEntrySignal(segment, index, cfg) {
   if (index < 60) return false;
 
-  const candle     = segment.candles[index];
-  const emaFast    = segment.emaSeries[cfg.emaFast][index];
-  const emaSlow    = segment.emaSeries[cfg.emaSlow][index];
-  const rsi14      = segment.rsiSeries[index];
-  const atr14      = segment.atrSeries[index];
-  const volumeSma  = segment.volumeSmaSeries[index];
+  const candle = segment.candles[index];
+  const previousCandle = segment.candles[index - 1];
 
-  if (emaFast === null || emaSlow === null || rsi14 === null || atr14 === null || volumeSma === null) {
+  const emaFast = segment.emaSeries[cfg.emaFast][index];
+  const emaSlow = segment.emaSeries[cfg.emaSlow][index];
+  const rsi14 = segment.rsiSeries[index];
+  const atr14 = segment.atrSeries[index];
+  const volumeSma = segment.volumeSmaSeries[index];
+
+  if (
+    emaFast === null ||
+    emaSlow === null ||
+    rsi14 === null ||
+    atr14 === null ||
+    volumeSma === null
+  ) {
     return false;
   }
 
-  if (cfg.useHtfFilter === true && segment.htfTrendSeries[index] !== true) return false;
+  if (cfg.useHtfFilter === true && segment.htfTrendSeries[index] !== true) {
+    return false;
+  }
 
-  if (cfg.maxVolumeFactor != null && candle.volume > volumeSma * cfg.maxVolumeFactor) return false;
+  if (
+    cfg.maxVolumeFactor != null &&
+    candle.volume > volumeSma * cfg.maxVolumeFactor
+  ) {
+    return false;
+  }
 
   const common =
     emaFast > emaSlow &&
@@ -206,17 +221,90 @@ function hasEntrySignal(segment, index, cfg) {
     atr14 > 0;
 
   if (!common) return false;
-  if (cfg.activeStrategy === "trendMomentum") return true;
 
-  // trendPullback
-  const lookbackStart = Math.max(0, index - (cfg.pullbackLookback || 8) + 1);
-  const tol = cfg.pullbackTolerancePct ?? 0.002;
-  let pullbackDetected = false;
-  for (let i = lookbackStart; i <= index; i++) {
-    if (segment.candles[i].low <= emaFast * (1 + tol)) { pullbackDetected = true; break; }
+  if (cfg.activeStrategy === "trendMomentum") {
+    return true;
   }
-  const bullishConfirm = candle.close > candle.open && candle.close > segment.candles[index - 1].close;
-  return pullbackDetected && bullishConfirm;
+
+  if (cfg.activeStrategy === "trendPullback") {
+    const lookbackStart = Math.max(0, index - (cfg.pullbackLookback || 8) + 1);
+    const tol = cfg.pullbackTolerancePct ?? 0.002;
+
+    let pullbackDetected = false;
+
+    for (let i = lookbackStart; i <= index; i++) {
+      if (segment.candles[i].low <= emaFast * (1 + tol)) {
+        pullbackDetected = true;
+        break;
+      }
+    }
+
+    const bullishConfirm =
+      candle.close > candle.open &&
+      candle.close > previousCandle.close;
+
+    return pullbackDetected && bullishConfirm;
+  }
+
+  if (cfg.activeStrategy === "breakoutRetest") {
+    const breakoutLookback = cfg.breakoutLookback || 30;
+    const breakoutRecentLookback = cfg.breakoutRecentLookback || 10;
+    const breakoutBufferPct = cfg.breakoutBufferPct ?? 0.001;
+    const retestTolerancePct = cfg.retestTolerancePct ?? 0.0025;
+
+    const startIndex = Math.max(
+      breakoutLookback,
+      index - breakoutRecentLookback
+    );
+
+    for (let i = startIndex; i <= index - 1; i++) {
+      const priorRange = segment.candles.slice(i - breakoutLookback, i);
+      const breakoutLevel = priorRange.reduce(
+        (max, priorCandle) => Math.max(max, priorCandle.high),
+        -Infinity
+      );
+
+      const breakoutCandle = segment.candles[i];
+
+      const breakoutDetected =
+        breakoutLevel > 0 &&
+        breakoutCandle.close > breakoutLevel * (1 + breakoutBufferPct);
+
+      if (!breakoutDetected) continue;
+
+      let retestDetected = false;
+
+      for (let j = i + 1; j <= index; j++) {
+        const retestCandle = segment.candles[j];
+
+        const touchedLevel =
+          retestCandle.low <= breakoutLevel * (1 + retestTolerancePct);
+
+        const heldLevel =
+          retestCandle.close >= breakoutLevel * (1 - retestTolerancePct);
+
+        if (touchedLevel && heldLevel) {
+          retestDetected = true;
+          break;
+        }
+      }
+
+      if (!retestDetected) continue;
+
+      const bullishConfirm =
+        candle.close > candle.open &&
+        candle.close > previousCandle.close &&
+        candle.close > breakoutLevel;
+
+      if (bullishConfirm) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  return false;
 }
 
 // ─── Drawdown helper ──────────────────────────────────────────────────────────

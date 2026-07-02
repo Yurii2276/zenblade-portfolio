@@ -39,9 +39,17 @@ export const config = {
       enabled: true,
       label: "Trend Pullback",
     },
+    breakoutRetest: {
+      enabled: true,
+      label: "Breakout Retest",
+    },
   },
   pullbackLookback: 8,
   pullbackTolerancePct: 0.002,
+  breakoutLookback: 30,
+  breakoutRecentLookback: 10,
+  breakoutBufferPct: 0.001,
+  retestTolerancePct: 0.0025,
   strategyProfiles: {
     conservative: {
       emaFast: 20,
