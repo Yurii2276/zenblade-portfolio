@@ -3,3 +3,7 @@ node_modules/
 logs/
 *.log
 attached_assets/
+
+# Generated stability research reports
+reports/strategy-stability-*.json
+reports/strategy-stability-*.csv
