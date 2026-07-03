@@ -162,3 +162,66 @@ Status: watch mode.
 - максимум одна позиція;
 - окрема статистика по кожній стратегії;
 - перевірка по 4 windows.
+
+---
+
+## Portfolio Research 1 — ETH Breakout + Pullback
+
+Status: promising research portfolio  
+Symbol: ETH-USDT  
+Real trading: no  
+Paper live: not yet  
+
+### Portfolio logic
+
+Портфель обʼєднує дві стратегії:
+
+1. breakoutStrong — ETH breakoutRetest для strong trend regime;
+2. pullbackSoft — ETH trendPullback для soft trend regime.
+
+Правило:
+
+- максимум одна активна позиція;
+- breakoutStrong має пріоритет;
+- якщо breakoutStrong не дає BUY, перевіряється pullbackSoft;
+- якщо жодна стратегія не дає BUY, бот не торгує.
+
+### Result on ~5999 ETH 5m candles
+
+Breakout only:
+
+- Trades: 5
+- Net PnL: +1.38 USDT
+- PF: 2.1
+- Win Rate: 80%
+- MaxDD: 1.26
+- Positive windows: 1/4
+
+Pullback only:
+
+- Trades: 9
+- Net PnL: +4.38 USDT
+- PF: 4.81
+- Win Rate: 88.9%
+- MaxDD: 1.15
+- Positive windows: 3/4
+
+Portfolio:
+
+- Trades: 14
+- Net PnL: +5.78 USDT
+- PF: 3.4
+- Win Rate: 85.7%
+- MaxDD: 1.26
+- Positive windows: 3/4
+- Candidate: false
+
+### Висновок
+
+Перший portfolio test підтвердив ідею multi-strategy підходу.
+
+Портфель дав більше угод і більший прибуток, ніж кожна стратегія окремо, без суттєвого погіршення drawdown.
+
+Причина Candidate false: лише 14 угод при мінімальному порозі 15.
+
+Рішення: залишити як promising research portfolio, але ще не запускати в paper live. Наступний крок — перевірити на більшій історії.

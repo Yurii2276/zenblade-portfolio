@@ -7,3 +7,7 @@ attached_assets/
 # Generated stability research reports
 reports/strategy-stability-*.json
 reports/strategy-stability-*.csv
+
+# ETH portfolio research reports
+reports/eth-portfolio-research.json
+reports/eth-portfolio-research.csv
