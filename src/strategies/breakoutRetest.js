@@ -4,6 +4,12 @@ function getCandleTime(candle) {
   return candle?.time ?? candle?.timestamp ?? candle?.ts ?? null;
 }
 
+function round(value, decimals = 4) {
+  if (!Number.isFinite(value)) return null;
+  const factor = 10 ** decimals;
+  return Math.round(value * factor) / factor;
+}
+
 function maxHigh(candles) {
   return candles.reduce((max, candle) => Math.max(max, candle.high), -Infinity);
 }
@@ -64,12 +70,16 @@ function findBreakoutRetest({ candles, config }) {
 export function getBreakoutRetestSignal({ candles, config, htfCandles = null }) {
   const breakoutLookback = config.breakoutLookback || 30;
   const breakoutRecentLookback = config.breakoutRecentLookback || 10;
+  const regimeEmaFastPeriod = config.breakoutRegimeEmaFast || 30;
+  const regimeEmaSlowPeriod = config.breakoutRegimeEmaSlow || 100;
+
   const minimumCandles = Math.max(
     config.emaSlow + 5,
     config.volumePeriod + 5,
     config.atrPeriod + 5,
+    regimeEmaSlowPeriod + 5,
     breakoutLookback + breakoutRecentLookback + 5,
-    80
+    120
   );
 
   if (!candles || candles.length < minimumCandles) {
@@ -91,9 +101,22 @@ export function getBreakoutRetestSignal({ candles, config, htfCandles = null }) 
 
   const emaFastVal = ema(closes, config.emaFast);
   const emaSlowVal = ema(closes, config.emaSlow);
+  const regimeEmaFast = ema(closes, regimeEmaFastPeriod);
+  const regimeEmaSlow = ema(closes, regimeEmaSlowPeriod);
+
   const rsi14 = rsi(closes, config.rsiPeriod);
   const atr14 = atr(candles, config.atrPeriod);
   const volumeSma20 = volumeSma(candles, config.volumePeriod);
+
+  const atrPct =
+    atr14 != null && lastClose > 0
+      ? round((atr14 / lastClose) * 100)
+      : null;
+
+  const regimeEmaSpreadPct =
+    regimeEmaFast != null && regimeEmaSlow != null && regimeEmaSlow > 0
+      ? round(((regimeEmaFast - regimeEmaSlow) / regimeEmaSlow) * 100)
+      : null;
 
   const breakoutState = findBreakoutRetest({ candles, config });
 
@@ -102,6 +125,33 @@ export function getBreakoutRetestSignal({ candles, config, htfCandles = null }) 
     lastClose > previousClose &&
     breakoutState.breakoutLevel != null &&
     lastClose > breakoutState.breakoutLevel;
+
+  const minEmaSpread = config.breakoutMinEmaSpreadPct;
+  const maxAtrPct = config.breakoutMaxAtrPct;
+  const minBreakoutRsi = config.breakoutMinRsi;
+
+  const emaSpreadOk =
+    minEmaSpread == null ||
+    (regimeEmaSpreadPct != null && regimeEmaSpreadPct >= minEmaSpread);
+
+  const atrPctOk =
+    maxAtrPct == null ||
+    (atrPct != null && atrPct <= maxAtrPct);
+
+  const breakoutRsiOk =
+    minBreakoutRsi == null ||
+    (rsi14 != null && rsi14 >= minBreakoutRsi);
+
+  const regimeFiltersOk = emaSpreadOk && atrPctOk && breakoutRsiOk;
+
+  let regimeRejectReason = null;
+  if (!emaSpreadOk) {
+    regimeRejectReason = `Regime filter: EMA ${regimeEmaFastPeriod}/${regimeEmaSlowPeriod} spread занадто слабкий`;
+  } else if (!atrPctOk) {
+    regimeRejectReason = "Regime filter: ATR% зависокий";
+  } else if (!breakoutRsiOk) {
+    regimeRejectReason = "Regime filter: RSI занизький";
+  }
 
   const indicators = {
     lastClose,
@@ -113,6 +163,7 @@ export function getBreakoutRetestSignal({ candles, config, htfCandles = null }) 
     ema50: emaSlowVal,
     rsi14,
     atr14,
+    atrPct,
     lastVolume,
     volumeSma20,
     htfLastClose: null,
@@ -125,6 +176,15 @@ export function getBreakoutRetestSignal({ candles, config, htfCandles = null }) 
     breakoutTime: breakoutState.breakoutTime,
     retestTime: breakoutState.retestTime,
     bullishConfirmation,
+    regimeEmaFastPeriod,
+    regimeEmaSlowPeriod,
+    regimeEmaFast,
+    regimeEmaSlow,
+    regimeEmaSpreadPct,
+    emaSpreadOk,
+    atrPctOk,
+    breakoutRsiOk,
+    regimeFiltersOk,
   };
 
   if (config.useHtfFilter === true) {
@@ -196,13 +256,14 @@ export function getBreakoutRetestSignal({ candles, config, htfCandles = null }) 
     trend5mOk &&
     rsiOk &&
     volumeOk &&
+    regimeFiltersOk &&
     breakoutState.breakoutDetected &&
     breakoutState.retestDetected &&
     bullishConfirmation
   ) {
     return {
       action: "BUY",
-      reason: "Breakout retest: HTF long, 5m trend long, breakout, retest held, bullish confirmation, volume confirmed",
+      reason: "Breakout retest: HTF long, 5m trend long, regime ok, breakout, retest held, bullish confirmation, volume confirmed",
       indicators,
     };
   }
@@ -215,6 +276,8 @@ export function getBreakoutRetestSignal({ candles, config, htfCandles = null }) 
     reason = "RSI поза зоною";
   } else if (!volumeOk) {
     reason = "Обʼєм не підтверджує";
+  } else if (!regimeFiltersOk) {
+    reason = regimeRejectReason || "Regime filter не підтверджує breakout-режим";
   } else if (!breakoutState.breakoutDetected) {
     reason = "Немає підтвердженого breakout";
   } else if (!breakoutState.retestDetected) {

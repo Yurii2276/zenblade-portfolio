@@ -50,6 +50,11 @@ export const config = {
   breakoutRecentLookback: 10,
   breakoutBufferPct: 0.001,
   retestTolerancePct: 0.0025,
+  breakoutRegimeEmaFast: 30,
+  breakoutRegimeEmaSlow: 100,
+  breakoutMinEmaSpreadPct: null,
+  breakoutMaxAtrPct: null,
+  breakoutMinRsi: null,
   strategyProfiles: {
     conservative: {
       emaFast: 20,
