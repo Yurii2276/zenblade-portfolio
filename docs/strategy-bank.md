@@ -225,3 +225,33 @@ Portfolio:
 Причина Candidate false: лише 14 угод при мінімальному порозі 15.
 
 Рішення: залишити як promising research portfolio, але ще не запускати в paper live. Наступний крок — перевірити на більшій історії.
+
+---
+
+## Candidate 3 — ETH Pullback Soft Filtered / Context Regime
+
+Status: research candidate, not live-ready.
+
+Best current research setup:
+- Symbol: ETH-USDT
+- Strategy: trendPullback
+- Profile: custom pullback soft
+- Main context filter:
+  - minRet3dPct: 1.5
+  - maxRet24hPct: 5
+
+Research summary:
+- 18k candles: 6 trades, +5.28 USDT, 100% win, MaxDD 0
+- 12k candles: 6 trades, +5.28 USDT, 100% win, MaxDD 0
+- 6k candles: 3 trades, +3.06 USDT, 100% win, MaxDD 0
+
+Interpretation:
+- The filter removed weak/choppy pullback entries.
+- The strategy has high quality but too few trades.
+- Not enough evidence for real trading.
+- Suitable only for paper/research mode until more statistics are collected.
+
+Decision:
+- Use ETH pullbackSoftFiltered as the main research candidate.
+- Keep breakoutStrong, breakoutStrict, and breakoutStrictFiltered paused.
+- Do not add breakout strategies to active portfolio yet.

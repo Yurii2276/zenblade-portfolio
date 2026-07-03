@@ -7,6 +7,8 @@ import { calculateLongTrade } from "../riskManager.js";
 const SYMBOL = "ETH-USDT";
 const INITIAL_BALANCE = baseConfig.initialBalance ?? 1000;
 const WINDOW_COUNT = 4;
+const TARGET_5M_CANDLES = Number.parseInt(process.env.ETH_PORTFOLIO_CANDLES ?? "6000", 10);
+const TARGET_HTF_CANDLES = Number.parseInt(process.env.ETH_PORTFOLIO_HTF_CANDLES ?? "1000", 10);
 
 function round(value, decimals = 2) {
   if (!Number.isFinite(value)) return null;
@@ -100,6 +102,102 @@ function buildStrategyConfig(setup) {
   };
 }
 
+function calcSpreadPct(fast, slow) {
+  if (!Number.isFinite(fast) || !Number.isFinite(slow) || slow <= 0) return null;
+  return ((fast - slow) / slow) * 100;
+}
+
+function calcReturnPct(candles, index, lookbackCandles) {
+  if (!Array.isArray(candles) || index - lookbackCandles < 0) return null;
+
+  const previousClose = candles[index - lookbackCandles]?.close;
+  const currentClose = candles[index]?.close;
+
+  if (!Number.isFinite(previousClose) || !Number.isFinite(currentClose) || previousClose <= 0) {
+    return null;
+  }
+
+  return ((currentClose - previousClose) / previousClose) * 100;
+}
+
+function passesSetupFilters({ setup, signal, candles, index }) {
+  const filters = setup.filters;
+  if (!filters || !signal.indicators) return true;
+
+  const indicators = signal.indicators;
+
+  if (filters.minEmaSpreadPct != null) {
+    const spread = calcSpreadPct(indicators.emaFast, indicators.emaSlow);
+    if (spread == null || spread < filters.minEmaSpreadPct) return false;
+  }
+
+  if (filters.minHtfEmaSpreadPct != null) {
+    const spread = calcSpreadPct(indicators.htfEmaFast, indicators.htfEmaSlow);
+    if (spread == null || spread < filters.minHtfEmaSpreadPct) return false;
+  }
+
+  if (filters.minRsi != null) {
+    if (indicators.rsi14 == null || indicators.rsi14 < filters.minRsi) return false;
+  }
+
+  if (filters.maxRsi != null) {
+    if (indicators.rsi14 == null || indicators.rsi14 > filters.maxRsi) return false;
+  }
+
+  if (filters.minAtrPct != null || filters.maxAtrPct != null) {
+    const atrPct =
+      indicators.atr14 != null && indicators.lastClose > 0
+        ? (indicators.atr14 / indicators.lastClose) * 100
+        : null;
+
+    if (filters.minAtrPct != null && (atrPct == null || atrPct < filters.minAtrPct)) {
+      return false;
+    }
+
+    if (filters.maxAtrPct != null && (atrPct == null || atrPct > filters.maxAtrPct)) {
+      return false;
+    }
+  }
+
+  if (filters.minRet12hPct != null || filters.maxRet12hPct != null) {
+    const ret12hPct = calcReturnPct(candles, index, 144);
+
+    if (filters.minRet12hPct != null && (ret12hPct == null || ret12hPct < filters.minRet12hPct)) {
+      return false;
+    }
+
+    if (filters.maxRet12hPct != null && (ret12hPct == null || ret12hPct > filters.maxRet12hPct)) {
+      return false;
+    }
+  }
+
+  if (filters.minRet24hPct != null || filters.maxRet24hPct != null) {
+    const ret24hPct = calcReturnPct(candles, index, 288);
+
+    if (filters.minRet24hPct != null && (ret24hPct == null || ret24hPct < filters.minRet24hPct)) {
+      return false;
+    }
+
+    if (filters.maxRet24hPct != null && (ret24hPct == null || ret24hPct > filters.maxRet24hPct)) {
+      return false;
+    }
+  }
+
+  if (filters.minRet3dPct != null || filters.maxRet3dPct != null) {
+    const ret3dPct = calcReturnPct(candles, index, 864);
+
+    if (filters.minRet3dPct != null && (ret3dPct == null || ret3dPct < filters.minRet3dPct)) {
+      return false;
+    }
+
+    if (filters.maxRet3dPct != null && (ret3dPct == null || ret3dPct > filters.maxRet3dPct)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 function getHtfSlice(htfCandles, currentTime) {
   return htfCandles.filter((candle) => candle.time <= currentTime);
 }
@@ -157,7 +255,11 @@ function backtestScenario({ candles, htfCandles, scenario }) {
         htfCandles: htfSlice,
       });
 
-      if (signal.action === "BUY" && signal.indicators?.atr14) {
+      if (
+        signal.action === "BUY" &&
+        signal.indicators?.atr14 &&
+        passesSetupFilters({ setup, signal, candles, index: i })
+      ) {
         selected = {
           setup,
           signal,
@@ -316,6 +418,41 @@ function makeScenarios() {
     },
   };
 
+  const breakoutStrict = {
+    ...breakoutStrong,
+    key: "breakoutStrict",
+    label: "ETH breakoutRetest / stricter strong trend",
+    priority: 2,
+    overrides: {
+      ...breakoutStrong.overrides,
+      breakoutMinEmaSpreadPct: 0.35,
+      breakoutMaxAtrPct: 0.25,
+      breakoutMinRsi: 58,
+    },
+  };
+
+  const pullbackSoftFiltered = {
+    ...pullbackSoft,
+    key: "pullbackSoftFiltered",
+    label: "ETH trendPullback / soft trend with regime filter",
+    priority: 1,
+    filters: {
+      minRet3dPct: 1.5,
+      maxRet24hPct: 5,
+    },
+  };
+
+  const breakoutStrictFiltered = {
+    ...breakoutStrict,
+    key: "breakoutStrictFiltered",
+    label: "ETH breakoutRetest / strict breakout with context filter",
+    priority: 2,
+    filters: {
+      minRet3dPct: 1.5,
+      maxRet24hPct: 5,
+    },
+  };
+
   return [
     {
       key: "breakout_only",
@@ -331,6 +468,43 @@ function makeScenarios() {
       key: "portfolio_breakout_then_pullback",
       label: "Portfolio: breakout priority, then pullback",
       setups: [breakoutStrong, pullbackSoft],
+    },
+    {
+      key: "portfolio_pullback_then_breakout",
+      label: "Portfolio: pullback priority, then breakout",
+      setups: [
+        { ...pullbackSoft, priority: 1 },
+        { ...breakoutStrong, priority: 2 },
+      ],
+    },
+    {
+      key: "portfolio_pullback_then_strict_breakout",
+      label: "Portfolio: pullback priority, then strict breakout",
+      setups: [
+        { ...pullbackSoft, priority: 1 },
+        { ...breakoutStrict, priority: 2 },
+      ],
+    },
+    {
+      key: "pullback_filtered_only",
+      label: "Pullback filtered only",
+      setups: [pullbackSoftFiltered],
+    },
+    {
+      key: "portfolio_filtered_pullback_then_strict_breakout",
+      label: "Portfolio: filtered pullback, then strict breakout",
+      setups: [
+        { ...pullbackSoftFiltered, priority: 1 },
+        { ...breakoutStrict, priority: 2 },
+      ],
+    },
+    {
+      key: "portfolio_filtered_pullback_then_filtered_strict_breakout",
+      label: "Portfolio: filtered pullback, then filtered strict breakout",
+      setups: [
+        { ...pullbackSoftFiltered, priority: 1 },
+        { ...breakoutStrictFiltered, priority: 2 },
+      ],
     },
   ];
 }
@@ -395,20 +569,22 @@ export async function runEthPortfolioResearch() {
   console.log("=== ZenBlade ETH Portfolio Research ===");
   console.log("Mode: research / paper only");
   console.log(`Symbol: ${SYMBOL}`);
+  console.log(`Target 5m candles: ${TARGET_5M_CANDLES}`);
+  console.log(`Target HTF candles: ${TARGET_HTF_CANDLES}`);
   console.log();
 
   console.log("Loading ETH 5m candles...");
   const candles = await fetchHistoricalCandles({
     symbol: SYMBOL,
     bar: baseConfig.bar,
-    targetLimit: 6000,
+    targetLimit: TARGET_5M_CANDLES,
   });
 
   console.log("Loading ETH 1H candles...");
   const htfCandles = await fetchHistoricalCandles({
     symbol: SYMBOL,
     bar: baseConfig.htfBar,
-    targetLimit: 1000,
+    targetLimit: TARGET_HTF_CANDLES,
   });
 
   console.log(`${SYMBOL}: ${candles.length} 5m candles | ${htfCandles.length} 1H candles`);
