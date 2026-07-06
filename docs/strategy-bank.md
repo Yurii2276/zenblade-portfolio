@@ -379,3 +379,34 @@ Decision:
 - QORB selected profile is promising for research.
 - Still not live-ready.
 - Needs longer history, walk-forward checks, and portfolio-level drawdown control.
+
+Research update — QORB watch profile:
+
+Profile:
+- QORB_PROFILE=watch
+- QORB_CANDLES=3000
+- Symbols: XPL-USDT, RE-USDT, BAT-USDT, AR-USDT, BICO-USDT, BREV-USDT
+- qorbMinPumpWeak: 12
+- qorbMinVolumeSpike: 1.3
+- qorbMinOpenScore: 35
+- qorbMinVolumeUSDT: 50000
+
+Latest result:
+- XPL-USDT: 7 trades, +68.35 USDT, PF 2.81, win 71.4%, maxDD 31.22
+- RE-USDT: 4 trades, +39.62 USDT, PF 3.03, win 75%, maxDD 19.49
+- BAT-USDT: 5 trades, +62.57 USDT, PF 2.63, win 60%, maxDD 38.37
+- AR-USDT: 5 trades, +51.37 USDT, PF 2.75, win 80%, maxDD 29.29
+- BICO-USDT: 5 trades, +30.08 USDT, PF 5, win 60%, maxDD 6.44
+- BREV-USDT: 5 trades, +19.63 USDT, PF 1.77, win 40%, maxDD 14.27
+
+Combined watch profile:
+- 31 trades
+- +271.62 USDT
+- All tested watch symbols finished positive
+- Candidate true: XPL, BAT, AR, BICO, BREV
+- RE remains watch-only because it has 4 trades, below the 5-trade candidate threshold
+
+Decision:
+- QORB watch profile is stronger than the first selected profile.
+- Still not live-ready.
+- Next step: test combined selected + watch basket and add portfolio-level drawdown controls.
