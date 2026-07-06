@@ -255,3 +255,59 @@ Decision:
 - Use ETH pullbackSoftFiltered as the main research candidate.
 - Keep breakoutStrong, breakoutStrict, and breakoutStrictFiltered paused.
 - Do not add breakout strategies to active portfolio yet.
+
+---
+
+## Candidate — QORB Pump Reversal Sniper
+
+Status: research candidate, paper only, not live-ready.
+
+Role in ZenBlade Portfolio:
+Satellite event-driven strategy for rare overheated altcoin pump reversals.
+
+Core idea:
+The strategy scans OKX USDT swap markets and looks for altcoins that made a strong pump. After the pump becomes older and starts losing strength, the bot tests paper short entries. The goal is to catch post-pump exhaustion, not to trade every day.
+
+Current live paper result:
+- Closed trades: 3
+- Current balance: 980.741 USDT
+- Realized PnL: -19.259 USDT
+- Open positions: 0
+- Mode: PAPER ONLY
+
+Current assessment:
+The strategy is technically working, but the trading edge is not proven yet. It has low frequency, high squeeze risk, and needs more signal/outcome data before it can be considered for live use.
+
+Strengths:
+- Can catch sharp reversals after speculative altcoin pumps.
+- Works as a rare-event sniper strategy.
+- Low correlation with ETH trend pullback logic.
+- Useful as one module inside a broader strategy portfolio.
+
+Weaknesses:
+- Low number of trades.
+- High risk of short squeeze after strong pumps.
+- Current sample is too small.
+- Entry logic needs better reversal confirmation.
+- Position management should be improved.
+
+Portfolio role:
+This strategy should not be the main ZenBlade strategy. It should be a satellite module with low allocation and strict risk control.
+
+Research limits:
+- PAPER ONLY
+- maxOpenPositions: 1
+- low allocation
+- no real trading
+- collect at least 30–50 paper trades before any promotion
+
+Next improvements:
+1. Add signal logging for WAIT / WATCH / READY / READY_LATE candidates.
+2. Add rejectReason for signals that are not opened.
+3. Add outcome labeling after 6h / 12h / 24h / 72h.
+4. Add better reversal confirmation before short entry.
+5. Add faster open-position monitoring.
+
+Decision:
+Keep QORB Pump Reversal Sniper as a ZenBlade Portfolio research candidate, not as a standalone main bot.
+
