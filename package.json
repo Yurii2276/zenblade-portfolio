@@ -24,7 +24,9 @@
     "research:sweep": "node src/sweepStrategies.js",
     "research:stability": "node src/stabilityStrategies.js",
     "research:qorb-reversal": "node src/research/qorbReversalResearch.js",
-    "research:eth-portfolio": "node src/research/ethPortfolioResearch.js"
+    "research:eth-portfolio": "node src/research/ethPortfolioResearch.js",
+    "paper:strategies": "node src/paper/strategyPortfolioBot.js",
+    "paper:strategies-loop": "node src/paper/strategyPortfolioLoop.js"
   },
   "main": "src/index.js",
   "license": "MIT"

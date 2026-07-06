@@ -18,3 +18,6 @@ reports/eth-portfolio-research.csv
 # Generated QORB research reports
 reports/qorb-reversal-research.json
 reports/qorb-reversal-research.csv
+
+# Paper bot runtime state
+data/
