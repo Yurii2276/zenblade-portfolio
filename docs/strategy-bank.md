@@ -410,3 +410,37 @@ Decision:
 - QORB watch profile is stronger than the first selected profile.
 - Still not live-ready.
 - Next step: test combined selected + watch basket and add portfolio-level drawdown controls.
+
+Research update — QORB basket profile:
+
+Profile:
+- QORB_PROFILE=basket
+- QORB_CANDLES=3000
+- Symbols: NEAR-USDT, ORDI-USDT, TIA-USDT, XPL-USDT, RE-USDT, BAT-USDT, AR-USDT, BICO-USDT, BREV-USDT
+- qorbMinPumpWeak: 12
+- qorbMinVolumeSpike: 1.3
+- qorbMinOpenScore: 35
+- qorbMinVolumeUSDT: 50000
+
+Latest result:
+- NEAR-USDT: 7 trades, +55.76 USDT, PF 1.8, win 57.1%, maxDD 42.87
+- ORDI-USDT: 6 trades, +35.77 USDT, PF 1.76, win 50%, maxDD 46.83
+- TIA-USDT: 6 trades, +17.35 USDT, PF 1.26, win 50%, maxDD 32.97
+- XPL-USDT: 7 trades, +68.35 USDT, PF 2.81, win 71.4%, maxDD 31.22
+- RE-USDT: 4 trades, +39.62 USDT, PF 3.03, win 75%, maxDD 19.49
+- BAT-USDT: 5 trades, +62.57 USDT, PF 2.63, win 60%, maxDD 38.37
+- AR-USDT: 5 trades, +51.37 USDT, PF 2.75, win 80%, maxDD 29.29
+- BICO-USDT: 5 trades, +30.08 USDT, PF 5, win 60%, maxDD 6.44
+- BREV-USDT: 5 trades, +19.63 USDT, PF 1.77, win 40%, maxDD 14.27
+
+Combined basket:
+- 50 trades
+- +380.50 USDT
+- 8 of 9 symbols are candidate true
+- RE remains watch-only because it has 4 trades, below the 5-trade candidate threshold
+- No tested basket symbol finished negative
+
+Decision:
+- QORB basket is the strongest QORB research profile so far.
+- Still research / paper only.
+- Not live-ready yet because portfolio-level drawdown control and walk-forward validation are still missing.
