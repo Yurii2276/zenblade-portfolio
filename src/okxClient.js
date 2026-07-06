@@ -100,23 +100,42 @@ export async function fetchCandles({ symbol, bar, limit }) {
   return confirmed;
 }
 
-export async function fetchOkxUsdtSpotSymbols({ maxSymbols = 80 } = {}) {
-  const url = "https://www.okx.com/api/v5/public/instruments?instType=SPOT";
 
-  let json;
+export async function fetchOkxUsdtSpotSymbols({ maxSymbols = 80 } = {}) {
+  const instrumentsUrl = "https://www.okx.com/api/v5/public/instruments?instType=SPOT";
+  const tickersUrl = "https://www.okx.com/api/v5/market/tickers?instType=SPOT";
+
+  let instrumentsJson;
+  let tickersJson;
+
   try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`OKX HTTP помилка: ${response.status}`);
+    const [instrumentsResponse, tickersResponse] = await Promise.all([
+      fetch(instrumentsUrl),
+      fetch(tickersUrl),
+    ]);
+
+    if (!instrumentsResponse.ok) {
+      throw new Error(`OKX instruments HTTP помилка: ${instrumentsResponse.status}`);
     }
-    json = await response.json();
+
+    if (!tickersResponse.ok) {
+      throw new Error(`OKX tickers HTTP помилка: ${tickersResponse.status}`);
+    }
+
+    instrumentsJson = await instrumentsResponse.json();
+    tickersJson = await tickersResponse.json();
   } catch (err) {
-    console.error(`OKX instruments network error: ${err.message}`);
+    console.error(`OKX symbol discovery network error: ${err.message}`);
     return [];
   }
 
-  if (json.code !== "0") {
-    console.error(`OKX instruments API error: ${json.msg}`);
+  if (instrumentsJson.code !== "0") {
+    console.error(`OKX instruments API error: ${instrumentsJson.msg}`);
+    return [];
+  }
+
+  if (tickersJson.code !== "0") {
+    console.error(`OKX tickers API error: ${tickersJson.msg}`);
     return [];
   }
 
@@ -129,17 +148,54 @@ export async function fetchOkxUsdtSpotSymbols({ maxSymbols = 80 } = {}) {
     "EURT",
     "USD",
     "EUR",
+    "USDE",
+    "USDS",
+    "PYUSD",
+    "USDG",
+    "XAUT",
+    "BETH",
+    "AUDF",
+    "AUDM",
+    "BRL1",
   ]);
 
-  const symbols = (json.data ?? [])
+  const tickerByInstId = new Map(
+    (tickersJson.data ?? []).map((ticker) => [ticker.instId, ticker])
+  );
+
+  function quoteVolume24h(instId) {
+    const ticker = tickerByInstId.get(instId);
+    if (!ticker) return 0;
+
+    const volCcy24h = Number.parseFloat(ticker.volCcy24h ?? "0");
+    if (Number.isFinite(volCcy24h) && volCcy24h > 0) {
+      return volCcy24h;
+    }
+
+    const last = Number.parseFloat(ticker.last ?? "0");
+    const vol24h = Number.parseFloat(ticker.vol24h ?? "0");
+
+    if (Number.isFinite(last) && Number.isFinite(vol24h)) {
+      return last * vol24h;
+    }
+
+    return 0;
+  }
+
+  const symbols = (instrumentsJson.data ?? [])
     .filter((instrument) =>
       instrument.state === "live" &&
       instrument.quoteCcy === "USDT" &&
       instrument.baseCcy &&
       !badBases.has(instrument.baseCcy)
     )
-    .map((instrument) => instrument.instId)
-    .sort();
+    .map((instrument) => ({
+      instId: instrument.instId,
+      quoteVolume24h: quoteVolume24h(instrument.instId),
+    }))
+    .filter((item) => item.quoteVolume24h > 0)
+    .sort((a, b) => b.quoteVolume24h - a.quoteVolume24h)
+    .map((item) => item.instId);
 
   if (maxSymbols > 0) {
     return symbols.slice(0, maxSymbols);
