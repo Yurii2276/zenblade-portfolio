@@ -353,3 +353,29 @@ Decision:
 - Keep QORB as Candidate 4.
 - Do not enable real orders.
 - Use only research / paper mode.
+
+Research update — QORB selected profile:
+
+Profile:
+- QORB_PROFILE=selected
+- Symbols: NEAR-USDT, ORDI-USDT, TIA-USDT
+- QORB_CANDLES=3000
+- qorbMinPumpWeak: 12
+- qorbMinVolumeSpike: 1.3
+- qorbMinOpenScore: 35
+- qorbMinVolumeUSDT: 50000
+
+Latest result:
+- NEAR-USDT: 7 trades, +55.76 USDT, PF 1.8, win 57.1%, maxDD 42.87
+- ORDI-USDT: 6 trades, +35.77 USDT, PF 1.76, win 50%, maxDD 46.83
+- TIA-USDT: 6 trades, +17.35 USDT, PF 1.26, win 50%, maxDD 32.97
+
+Combined selected profile:
+- 19 trades
+- +108.88 USDT
+- Approx win rate: 52.6%
+
+Decision:
+- QORB selected profile is promising for research.
+- Still not live-ready.
+- Needs longer history, walk-forward checks, and portfolio-level drawdown control.
