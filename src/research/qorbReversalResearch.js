@@ -113,6 +113,7 @@ async function backtestSymbol(symbol) {
   let openPosition = null;
   const trades    = [];
   const equity    = [INITIAL_BALANCE];
+  const usedEventKeys = new Set();
 
   for (let i = minStart; i < candles.length; i++) {
     const currentCandle = candles[i];
@@ -169,6 +170,7 @@ async function backtestSymbol(symbol) {
 
     if (signal.action !== "SELL_SHORT") continue;
     if (!signal.indicators) continue;
+    if (signal.indicators.eventKey && usedEventKeys.has(signal.indicators.eventKey)) continue;
 
     const entryPrice = currentCandle.close;
     const tpPct  = qorbConfig.qorbTpPct  ?? 15;
@@ -196,7 +198,12 @@ async function backtestSymbol(symbol) {
         stopPrice,   // % based
         takePrice,   // % based
         size:         planned.size,
+        eventKey:     signal.indicators.eventKey,
       };
+
+      if (signal.indicators.eventKey) {
+        usedEventKeys.add(signal.indicators.eventKey);
+      }
     }
   }
 
