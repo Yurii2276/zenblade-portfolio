@@ -35,6 +35,12 @@ const QORB_PROFILES = {
     qorbMinOpenScore: 35,
     qorbMinVolumeUSDT: 50000,
   },
+  watch: {
+    qorbMinPumpWeak: 12,
+    qorbMinVolumeSpike: 1.3,
+    qorbMinOpenScore: 35,
+    qorbMinVolumeUSDT: 50000,
+  },
 };
 
 const profileOverrides = QORB_PROFILES[QORB_PROFILE] ?? QORB_PROFILES.default;
@@ -240,6 +246,10 @@ async function resolveQorbSymbols() {
 
   if (QORB_PROFILE === "selected") {
     return baseConfig.qorbSelectedSymbols ?? baseConfig.qorbSymbols ?? baseConfig.symbols;
+  }
+
+  if (QORB_PROFILE === "watch") {
+    return baseConfig.qorbWatchSymbols ?? baseConfig.qorbSelectedSymbols ?? baseConfig.qorbSymbols ?? baseConfig.symbols;
   }
 
   if (QORB_PROFILE === "auto") {
