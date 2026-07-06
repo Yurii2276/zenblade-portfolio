@@ -18,24 +18,44 @@ const QORB_SYMBOLS = (process.env.QORB_SYMBOLS ?? "")
   .map((symbol) => symbol.trim())
   .filter(Boolean);
 
+const QORB_PROFILE = process.env.QORB_PROFILE ?? "default";
+
+const QORB_PROFILES = {
+  default: {},
+  selected: {
+    qorbMinPumpWeak: 12,
+    qorbMinVolumeSpike: 1.3,
+    qorbMinOpenScore: 35,
+    qorbMinVolumeUSDT: 50000,
+  },
+};
+
+const profileOverrides = QORB_PROFILES[QORB_PROFILE] ?? QORB_PROFILES.default;
+
 // Build a config overlay with QORB defaults merged
 const qorbConfig = {
   ...baseConfig,
   symbols: QORB_SYMBOLS.length > 0
     ? QORB_SYMBOLS
-    : (baseConfig.qorbSymbols ?? baseConfig.symbols),
+    : (QORB_PROFILE === "selected"
+      ? (baseConfig.qorbSelectedSymbols ?? baseConfig.qorbSymbols ?? baseConfig.symbols)
+      : (baseConfig.qorbSymbols ?? baseConfig.symbols)),
 
   qorbMinPumpWeak: Number.parseFloat(
-    process.env.QORB_MIN_PUMP_WEAK ?? String(baseConfig.qorbMinPumpWeak ?? 30)
+    process.env.QORB_MIN_PUMP_WEAK ??
+    String(profileOverrides.qorbMinPumpWeak ?? baseConfig.qorbMinPumpWeak ?? 30)
   ),
   qorbMinVolumeSpike: Number.parseFloat(
-    process.env.QORB_MIN_VOLUME_SPIKE ?? String(baseConfig.qorbMinVolumeSpike ?? 3)
+    process.env.QORB_MIN_VOLUME_SPIKE ??
+    String(profileOverrides.qorbMinVolumeSpike ?? baseConfig.qorbMinVolumeSpike ?? 3)
   ),
   qorbMinOpenScore: Number.parseFloat(
-    process.env.QORB_MIN_OPEN_SCORE ?? String(baseConfig.qorbMinOpenScore ?? 70)
+    process.env.QORB_MIN_OPEN_SCORE ??
+    String(profileOverrides.qorbMinOpenScore ?? baseConfig.qorbMinOpenScore ?? 70)
   ),
   qorbMinVolumeUSDT: Number.parseFloat(
-    process.env.QORB_MIN_VOLUME_USDT ?? String(baseConfig.qorbMinVolumeUSDT ?? 300000)
+    process.env.QORB_MIN_VOLUME_USDT ??
+    String(profileOverrides.qorbMinVolumeUSDT ?? baseConfig.qorbMinVolumeUSDT ?? 300000)
   ),
 
   paperOnly: true,
@@ -263,6 +283,7 @@ function writeReports(allResults) {
 async function run() {
   console.log("=== ZenBlade QORB Pump Reversal Short Research ===");
   console.log("Mode: research / paper only — no real trading");
+  console.log(`Profile: ${QORB_PROFILE}`);
   console.log(`Symbols: ${qorbConfig.symbols.join(", ")}`);
   console.log(`Timeframe: 1H | Target candles: ${TARGET_HTF_CANDLES}`);
   console.log(

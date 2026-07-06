@@ -20,6 +20,11 @@ export const config = {
     "ORDI-USDT",
     "TIA-USDT",
   ],
+  qorbSelectedSymbols: [
+    "NEAR-USDT",
+    "ORDI-USDT",
+    "TIA-USDT",
+  ],
   initialBalance: 1000,
   riskPerTrade: 0.01,
   takeProfitPct: 0.006,
