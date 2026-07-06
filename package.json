@@ -23,7 +23,7 @@
     "research:strategies": "node src/researchStrategies.js",
     "research:sweep": "node src/sweepStrategies.js",
     "research:stability": "node src/stabilityStrategies.js",
-    "research:eth-portfolio": "node src/ethPortfolioResearch.js"
+    "research:eth-portfolio": "node src/research/ethPortfolioResearch.js"
   },
   "main": "src/index.js",
   "license": "MIT"

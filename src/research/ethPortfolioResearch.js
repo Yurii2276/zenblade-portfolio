@@ -634,3 +634,14 @@ export async function runEthPortfolioResearch() {
 
   return results;
 }
+
+const isDirectRun =
+  process.argv[1] && import.meta.url === "file://" + process.argv[1];
+
+if (isDirectRun) {
+  runEthPortfolioResearch().catch((error) => {
+    console.error("ETH portfolio research failed:", error);
+    process.exitCode = 1;
+  });
+}
+
