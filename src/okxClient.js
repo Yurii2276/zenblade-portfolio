@@ -99,3 +99,51 @@ export async function fetchCandles({ symbol, bar, limit }) {
 
   return confirmed;
 }
+
+export async function fetchOkxUsdtSpotSymbols({ maxSymbols = 80 } = {}) {
+  const url = "https://www.okx.com/api/v5/public/instruments?instType=SPOT";
+
+  let json;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`OKX HTTP помилка: ${response.status}`);
+    }
+    json = await response.json();
+  } catch (err) {
+    console.error(`OKX instruments network error: ${err.message}`);
+    return [];
+  }
+
+  if (json.code !== "0") {
+    console.error(`OKX instruments API error: ${json.msg}`);
+    return [];
+  }
+
+  const badBases = new Set([
+    "USDT",
+    "USDC",
+    "DAI",
+    "TUSD",
+    "FDUSD",
+    "EURT",
+    "USD",
+    "EUR",
+  ]);
+
+  const symbols = (json.data ?? [])
+    .filter((instrument) =>
+      instrument.state === "live" &&
+      instrument.quoteCcy === "USDT" &&
+      instrument.baseCcy &&
+      !badBases.has(instrument.baseCcy)
+    )
+    .map((instrument) => instrument.instId)
+    .sort();
+
+  if (maxSymbols > 0) {
+    return symbols.slice(0, maxSymbols);
+  }
+
+  return symbols;
+}

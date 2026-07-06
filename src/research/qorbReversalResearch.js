@@ -6,7 +6,7 @@
 
 import fs from "node:fs";
 import { config as baseConfig } from "../config.js";
-import { fetchHistoricalCandles } from "../okxClient.js";
+import { fetchHistoricalCandles, fetchOkxUsdtSpotSymbols } from "../okxClient.js";
 import { getQorbPumpReversalShortSignal } from "../strategies/qorbPumpReversalShort.js";
 import { calculateShortTrade } from "../riskManager.js";
 import { closeResearchTrade } from "./tradeAccounting.js";
@@ -19,10 +19,17 @@ const QORB_SYMBOLS = (process.env.QORB_SYMBOLS ?? "")
   .filter(Boolean);
 
 const QORB_PROFILE = process.env.QORB_PROFILE ?? "default";
+const QORB_MAX_SYMBOLS = Number.parseInt(process.env.QORB_MAX_SYMBOLS ?? "40", 10);
 
 const QORB_PROFILES = {
   default: {},
   selected: {
+    qorbMinPumpWeak: 12,
+    qorbMinVolumeSpike: 1.3,
+    qorbMinOpenScore: 35,
+    qorbMinVolumeUSDT: 50000,
+  },
+  auto: {
     qorbMinPumpWeak: 12,
     qorbMinVolumeSpike: 1.3,
     qorbMinOpenScore: 35,
@@ -35,11 +42,7 @@ const profileOverrides = QORB_PROFILES[QORB_PROFILE] ?? QORB_PROFILES.default;
 // Build a config overlay with QORB defaults merged
 const qorbConfig = {
   ...baseConfig,
-  symbols: QORB_SYMBOLS.length > 0
-    ? QORB_SYMBOLS
-    : (QORB_PROFILE === "selected"
-      ? (baseConfig.qorbSelectedSymbols ?? baseConfig.qorbSymbols ?? baseConfig.symbols)
-      : (baseConfig.qorbSymbols ?? baseConfig.symbols)),
+  symbols: [],
 
   qorbMinPumpWeak: Number.parseFloat(
     process.env.QORB_MIN_PUMP_WEAK ??
@@ -230,6 +233,23 @@ async function backtestSymbol(symbol) {
   return calcStats(trades, equity);
 }
 
+async function resolveQorbSymbols() {
+  if (QORB_SYMBOLS.length > 0) {
+    return QORB_SYMBOLS;
+  }
+
+  if (QORB_PROFILE === "selected") {
+    return baseConfig.qorbSelectedSymbols ?? baseConfig.qorbSymbols ?? baseConfig.symbols;
+  }
+
+  if (QORB_PROFILE === "auto") {
+    const symbols = await fetchOkxUsdtSpotSymbols({ maxSymbols: QORB_MAX_SYMBOLS });
+    return symbols.length > 0 ? symbols : (baseConfig.qorbSymbols ?? baseConfig.symbols);
+  }
+
+  return baseConfig.qorbSymbols ?? baseConfig.symbols;
+}
+
 function printResult(symbol, stats) {
   const pfStr  = stats.profitFactor === null ? "∞" : (stats.profitFactor ?? "N/A");
   const wrStr  = stats.winRate !== null ? `${stats.winRate}%` : "N/A";
@@ -281,9 +301,14 @@ function writeReports(allResults) {
 }
 
 async function run() {
+  qorbConfig.symbols = await resolveQorbSymbols();
+
   console.log("=== ZenBlade QORB Pump Reversal Short Research ===");
   console.log("Mode: research / paper only — no real trading");
   console.log(`Profile: ${QORB_PROFILE}`);
+  if (QORB_PROFILE === "auto") {
+    console.log(`Auto max symbols: ${QORB_MAX_SYMBOLS}`);
+  }
   console.log(`Symbols: ${qorbConfig.symbols.join(", ")}`);
   console.log(`Timeframe: 1H | Target candles: ${TARGET_HTF_CANDLES}`);
   console.log(
