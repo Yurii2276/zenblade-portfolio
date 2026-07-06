@@ -261,6 +261,57 @@ function printResult(symbol, stats) {
   );
 }
 
+function printRanking(allResults) {
+  const ranked = [...allResults]
+    .filter(({ stats }) => stats.trades > 0)
+    .sort((a, b) => b.stats.netPnl - a.stats.netPnl);
+
+  if (ranked.length === 0) {
+    console.log("\n=== QORB Ranking ===");
+    console.log("No trades found for ranking.");
+    return;
+  }
+
+  const candidates = ranked.filter(({ stats }) => isCandidate(stats));
+  const profitable = ranked.filter(({ stats }) => stats.netPnl > 0);
+  const negative = ranked
+    .filter(({ stats }) => stats.netPnl < 0)
+    .sort((a, b) => a.stats.netPnl - b.stats.netPnl);
+
+  console.log("\n=== QORB Ranking ===");
+
+  console.log("\nTop profitable:");
+  for (const { symbol, stats } of profitable.slice(0, 10)) {
+    const pf = stats.profitFactor === null ? "∞" : stats.profitFactor;
+    console.log(
+      `${symbol} | trades ${stats.trades} | pnl ${stats.netPnl} | PF ${pf} | win ${stats.winRate}% | DD ${stats.maxDrawdown}`
+    );
+  }
+
+  console.log("\nCandidate true:");
+  if (candidates.length === 0) {
+    console.log("No candidate symbols.");
+  } else {
+    for (const { symbol, stats } of candidates) {
+      const pf = stats.profitFactor === null ? "∞" : stats.profitFactor;
+      console.log(
+        `${symbol} | trades ${stats.trades} | pnl ${stats.netPnl} | PF ${pf} | win ${stats.winRate}% | DD ${stats.maxDrawdown}`
+      );
+    }
+  }
+
+  console.log("\nWorst negative:");
+  if (negative.length === 0) {
+    console.log("No negative symbols.");
+  } else {
+    for (const { symbol, stats } of negative.slice(0, 10)) {
+      console.log(
+        `${symbol} | trades ${stats.trades} | pnl ${stats.netPnl} | PF ${stats.profitFactor} | win ${stats.winRate}% | DD ${stats.maxDrawdown}`
+      );
+    }
+  }
+}
+
 function writeReports(allResults) {
   fs.mkdirSync("reports", { recursive: true });
 
@@ -332,6 +383,8 @@ async function run() {
   for (const { symbol, stats } of allResults) {
     printResult(symbol, stats);
   }
+
+  printRanking(allResults);
 
   if (allResults.length === 0) {
     console.log("No results — check network connectivity.");
