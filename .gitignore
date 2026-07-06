@@ -11,3 +11,10 @@ reports/strategy-stability-*.csv
 # ETH portfolio research reports
 reports/eth-portfolio-research.json
 reports/eth-portfolio-research.csv
+
+# Replit Agent local memory
+.agents/
+
+# Generated QORB research reports
+reports/qorb-reversal-research.json
+reports/qorb-reversal-research.csv

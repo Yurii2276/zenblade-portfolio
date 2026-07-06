@@ -1,6 +1,7 @@
 import { getTrendMomentumSignal } from "./trendMomentum.js";
 import { getTrendPullbackSignal } from "./trendPullback.js";
 import { getBreakoutRetestSignal } from "./breakoutRetest.js";
+import { getQorbPumpReversalShortSignal } from "./qorbPumpReversalShort.js";
 
 export function getStrategySignal({
   strategyName,
@@ -18,6 +19,10 @@ export function getStrategySignal({
 
   if (strategyName === "breakoutRetest") {
     return getBreakoutRetestSignal({ candles, config, htfCandles });
+  }
+
+  if (strategyName === "qorbPumpReversalShort") {
+    return getQorbPumpReversalShortSignal({ candles, config });
   }
 
   throw new Error(`Unknown strategy: ${strategyName}`);
