@@ -12,11 +12,32 @@ import { calculateShortTrade } from "../riskManager.js";
 import { closeResearchTrade } from "./tradeAccounting.js";
 
 const INITIAL_BALANCE = baseConfig.initialBalance ?? 1000;
-const TARGET_HTF_CANDLES = 1000;
+const TARGET_HTF_CANDLES = Number.parseInt(process.env.QORB_CANDLES ?? "3000", 10);
+const QORB_SYMBOLS = (process.env.QORB_SYMBOLS ?? "")
+  .split(",")
+  .map((symbol) => symbol.trim())
+  .filter(Boolean);
 
 // Build a config overlay with QORB defaults merged
 const qorbConfig = {
   ...baseConfig,
+  symbols: QORB_SYMBOLS.length > 0
+    ? QORB_SYMBOLS
+    : (baseConfig.qorbSymbols ?? baseConfig.symbols),
+
+  qorbMinPumpWeak: Number.parseFloat(
+    process.env.QORB_MIN_PUMP_WEAK ?? String(baseConfig.qorbMinPumpWeak ?? 30)
+  ),
+  qorbMinVolumeSpike: Number.parseFloat(
+    process.env.QORB_MIN_VOLUME_SPIKE ?? String(baseConfig.qorbMinVolumeSpike ?? 3)
+  ),
+  qorbMinOpenScore: Number.parseFloat(
+    process.env.QORB_MIN_OPEN_SCORE ?? String(baseConfig.qorbMinOpenScore ?? 70)
+  ),
+  qorbMinVolumeUSDT: Number.parseFloat(
+    process.env.QORB_MIN_VOLUME_USDT ?? String(baseConfig.qorbMinVolumeUSDT ?? 300000)
+  ),
+
   paperOnly: true,
 };
 
@@ -237,6 +258,12 @@ async function run() {
   console.log("Mode: research / paper only — no real trading");
   console.log(`Symbols: ${qorbConfig.symbols.join(", ")}`);
   console.log(`Timeframe: 1H | Target candles: ${TARGET_HTF_CANDLES}`);
+  console.log(
+    `QORB filters: pump >= ${qorbConfig.qorbMinPumpWeak}% | ` +
+    `volumeSpike >= ${qorbConfig.qorbMinVolumeSpike} | ` +
+    `score >= ${qorbConfig.qorbMinOpenScore} | ` +
+    `minVolumeUSDT >= ${qorbConfig.qorbMinVolumeUSDT}`
+  );
   console.log();
 
   const allResults = [];
