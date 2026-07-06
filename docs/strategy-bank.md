@@ -311,3 +311,45 @@ Next improvements:
 Decision:
 Keep QORB Pump Reversal Sniper as a ZenBlade Portfolio research candidate, not as a standalone main bot.
 
+
+---
+
+## Candidate 4 — QORB Pump Reversal Short
+
+Status: research framework added, not live-ready.
+
+Source idea:
+- Based on the separate QORB Pump Paper Bot.
+- Railway QORB bot remains separate and untouched.
+- ZenBlade version is research/backtest only.
+
+Strategy type:
+- SHORT reversal after pump.
+- Not a long pump strategy.
+
+Core idea:
+- Detect coins that pumped strongly over 24h.
+- Confirm abnormal volume spike.
+- Wait for pump event maturity / exhaustion zone.
+- Open paper SHORT after the pump, expecting a reversal or cooldown.
+
+Main default filters:
+- qorbPumpLookbackHours: 24
+- qorbVolumeLookbackHours: 24
+- qorbMinPumpWeak: 30
+- qorbMinVolumeSpike: 3
+- qorbMinVolumeUSDT: 300000
+- qorbMinOpenScore: 70
+- qorbTpPct: 15
+- qorbSlPct: 10
+- qorbMaxHoldHours: 72
+
+Current research result:
+- BTC-USDT, ETH-USDT, SOL-USDT: 0 trades on recent 1H candles.
+- This is expected because large caps rarely produce +30% pump conditions.
+- Next step: test QORB on a wider altcoin universe.
+
+Decision:
+- Keep QORB as Candidate 4.
+- Do not enable real orders.
+- Use only research / paper mode.
