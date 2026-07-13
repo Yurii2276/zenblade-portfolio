@@ -28,7 +28,8 @@
     "paper:strategies": "node src/paper/strategyPortfolioBot.js",
     "paper:strategies-loop": "node src/paper/strategyPortfolioLoop.js",
     "paper:report": "node src/paper/reportStrategyPaper.js",
-    "research:memory": "node src/research/researchMemory.js"
+    "research:memory": "node src/research/researchMemory.js",
+    "research:qorb-missed": "node src/research/qorbMissedOpportunities.js"
   },
   "main": "src/index.js",
   "license": "MIT"
