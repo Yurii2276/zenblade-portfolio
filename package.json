@@ -30,7 +30,8 @@
     "paper:report": "node src/paper/reportStrategyPaper.js",
     "research:memory": "node src/research/researchMemory.js",
     "research:qorb-missed": "node src/research/qorbMissedOpportunities.js",
-    "research:qorb-sweep": "node src/research/qorbParameterSweep.js"
+    "research:qorb-sweep": "node src/research/qorbParameterSweep.js",
+    "research:gold-index": "node src/research/goldIndexResearch.js"
   },
   "main": "src/index.js",
   "license": "MIT"

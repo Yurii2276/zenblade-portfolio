@@ -101,3 +101,56 @@ Interpretation:
 - The problem is not that QORB is too strict.
 - QORB is a rare strategy and needs a fresh READY / READY_LATE window.
 - Next step is observation, not QORB v2.
+
+---
+
+## 2026-07-13 — Gold Index Phase 1: data source audit
+
+Command:
+- npm run research:gold-index
+
+Scope:
+- Research only.
+- No Railway paper-loop changes.
+- No live trading.
+- No real orders.
+- No private API keys.
+
+Data checked:
+- Crypto symbols: BTC-USDT, ETH-USDT, SOL-USDT.
+- Gold proxy candidates: XAUT-USDT, PAXG-USDT.
+- Bar: 1D.
+- Target candles: 500.
+- Gold signal condition: 2D gold proxy change >= 0.7%.
+
+Source result:
+- BTC-USDT: 499 daily candles.
+- ETH-USDT: 499 daily candles.
+- SOL-USDT: 499 daily candles.
+- XAUT-USDT: 499 daily candles.
+- PAXG-USDT: 271 daily candles.
+- DXY source is not implemented in the repo.
+
+Best observed result:
+- XAUT-USDT -> BTC-USDT.
+- Aligned days: 497.
+- Signal days: 163.
+- Baseline average 2D forward return: -0.07%.
+- Signal average 2D forward return: -0.03%.
+- Signal hit rate 2D: 52.8%.
+
+Interpretation:
+- XAUT-USDT is usable as an OKX gold proxy for research.
+- The best result is only marginal.
+- Gold-only signal does not clearly confirm a tradeable edge.
+- ETH and SOL are not confirmed by this test.
+- PAXG results are weaker and have shorter history.
+
+Decision:
+- Do not add Gold Index to Railway paper loop.
+- Do not enable Gold Index paper entries.
+- Continue only as research.
+- Next step is to define whether Gold Index should be BTC-only macro context, or whether DXY must be added before further testing.
+
+Blocked change:
+- No paper-loop integration until stronger backtest evidence exists.
