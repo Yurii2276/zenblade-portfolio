@@ -49,3 +49,27 @@ Blocked change:
 
 Next:
 - Build QORB missed-opportunities report.
+
+## 2026-07-13 — QORB missed-opportunities audit
+
+Command:
+- QORB_PROFILE=basket QORB_CANDLES=1500 npm run research:qorb-missed
+
+Result:
+- Total audit records: 161.
+- READY: 32 records, 75% simulated win rate, avgGross 6.12%.
+- READY_LATE: 32 records, 65.6% simulated win rate, avgGross 5.02%.
+- WATCH: 35 records, 62.9% simulated win rate, avgGross 3.66%.
+- WAIT: 35 records, 65.7% simulated win rate, avgGross 4.25%.
+- EXPIRED: 27 records, 40.7% simulated win rate, avgGross -0.45%.
+
+Decision:
+- Do not enable EXPIRED entries.
+- Main opportunity is probably not EXPIRED Scout.
+- Next research should be parameter sweep for READY / READY_LATE:
+  - minOpenScore 35, 33, 30, 28;
+  - changeSinceEvent lower bound -20, -25, -30;
+  - compare whether WATCH or WAIT can be safely included.
+
+Blocked change:
+- Do not add QORB v2 to paper loop until parameter sweep confirms better settings.
