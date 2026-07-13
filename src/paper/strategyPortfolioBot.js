@@ -8,11 +8,15 @@ import { sendTelegramMessage } from "../telegram.js";
 const STATE_PATH = path.resolve("data/strategy-paper-state.json");
 const TRADES_PATH = path.resolve("data/strategy-paper-trades.json");
 
+const STATUS_INTERVAL_HOURS = Number.parseFloat(process.env.PAPER_STATUS_HOURS ?? "6");
+const LOG_WAIT = process.env.PAPER_LOG_WAIT === "true";
+
 const DEFAULT_STATE = {
   balance: baseConfig.initialBalance ?? 1000,
   openPositions: [],
   lastProcessedCandleByKey: {},
   usedSignalKeys: {},
+  lastStatusAt: null,
 };
 
 const STRATEGIES = [
@@ -95,6 +99,7 @@ function loadState() {
     openPositions: Array.isArray(state.openPositions) ? state.openPositions : [],
     lastProcessedCandleByKey: state.lastProcessedCandleByKey ?? {},
     usedSignalKeys: state.usedSignalKeys ?? {},
+    lastStatusAt: state.lastStatusAt ?? null,
   };
 }
 
@@ -317,6 +322,58 @@ function closePosition({ position, exitPrice, reason, balance }) {
   };
 }
 
+function sumNetPnl(trades) {
+  return trades.reduce((sum, trade) => sum + Number(trade.netPnl ?? trade.netPnlUsdt ?? 0), 0);
+}
+
+function groupPnlByStrategy(trades) {
+  const grouped = new Map();
+
+  for (const trade of trades) {
+    const key = trade.strategyName ?? trade.strategy ?? trade.strategyId ?? "Unknown strategy";
+    const current = grouped.get(key) ?? { count: 0, pnl: 0 };
+    current.count += 1;
+    current.pnl += Number(trade.netPnl ?? trade.netPnlUsdt ?? 0);
+    grouped.set(key, current);
+  }
+
+  return [...grouped.entries()]
+    .map(([strategy, value]) => {
+      const sign = value.pnl >= 0 ? "+" : "";
+      return `- ${strategy}: ${value.count} trades, ${sign}${round(value.pnl, 2)} USDT`;
+    })
+    .join("\n");
+}
+
+async function notifyStatusIfDue(state, trades) {
+  if (!baseConfig.telegramEnabled) return;
+
+  const lastStatusMs = state.lastStatusAt ? Date.parse(state.lastStatusAt) : 0;
+  const ageHours = lastStatusMs ? (Date.now() - lastStatusMs) / (60 * 60 * 1000) : Infinity;
+
+  if (Number.isFinite(ageHours) && ageHours < STATUS_INTERVAL_HOURS) {
+    return;
+  }
+
+  const totalPnl = round(sumNetPnl(trades), 2);
+  const startBalance = baseConfig.initialBalance ?? 1000;
+  const pnlPct = startBalance > 0 ? round((totalPnl / startBalance) * 100, 3) : 0;
+  const pnlSign = totalPnl >= 0 ? "+" : "";
+  const strategyLines = groupPnlByStrategy(trades) || "- no closed trades yet";
+
+  const message =
+    `📊 ZenBlade PAPER STATUS\n` +
+    `Mode: paper only — no real trading\n` +
+    `Balance: ${round(state.balance, 2)} USDT\n` +
+    `Total PnL: ${pnlSign}${totalPnl} USDT (${pnlSign}${pnlPct}%)\n` +
+    `Open positions: ${state.openPositions.length}\n` +
+    `Closed trades: ${trades.length}\n\n` +
+    `PnL by strategy:\n${strategyLines}`;
+
+  state.lastStatusAt = new Date().toISOString();
+  await sendTelegramMessage(message);
+}
+
 async function notifyOpen(position) {
   if (!baseConfig.telegramEnabled || !baseConfig.notifyOnBuy) return;
 
@@ -425,7 +482,9 @@ async function evaluateStrategySymbol({ strategy, symbol, state }) {
   }
 
   if (state.lastProcessedCandleByKey[key] === lastCandle.time) {
-    console.log(`WAIT | ${strategy.strategyName} | ${symbol} | candle already processed`);
+    if (LOG_WAIT) {
+      console.log(`WAIT | ${strategy.strategyName} | ${symbol} | candle already processed`);
+    }
     return;
   }
 
@@ -519,6 +578,7 @@ export async function runStrategyPortfolioOnce() {
     }
   }
 
+  await notifyStatusIfDue(state, trades);
   saveAll(state, trades);
 
   console.log();
