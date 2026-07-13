@@ -2,7 +2,7 @@
   "strategyId": "qorb-pump-reversal",
   "strategyName": "QORB Pump Reversal Basket",
   "mode": "paper/research",
-  "status": "missed_opportunities_audited",
+  "status": "parameter_sweep_completed",
   "lastUpdated": "2026-07-13",
   "currentObservation": {
     "livePaperEntries": 0,
@@ -14,27 +14,30 @@
       "READY_LATE: 32 records, 65.6% simulated win rate, average gross 5.02%",
       "WATCH: 35 records, 62.9% simulated win rate, average gross 3.66%",
       "WAIT: 35 records, 65.7% simulated win rate, average gross 4.25%"
-    ]
+    ],
+    "parameterSweepFinding": "Parameter sweep found the strict baseline configuration best: READY+READY_LATE, score>=35, change -20..5, 30 trades, 80% simulated win rate, avgGross 6.94%, avgBounce24h 4.99%.",
+    "conclusion": "The issue is not that QORB filters are too strict. The strategy is rare and waits for a fresh READY/READY_LATE window."
   },
-  "lastDecision": "Do not enable EXPIRED entries. Run parameter sweep for READY/READY_LATE with softer score and changeSinceEvent filters.",
+  "lastDecision": "Keep QORB strict parameters for now: READY/READY_LATE only, score >= 35, changeSinceEvent -20..5. Do not relax filters.",
   "knownProblems": [
-    "Too many EXPIRED signals in live paper logs",
-    "EXPIRED signals are not profitable enough as a group",
-    "Strict minOpenScore may reject some profitable READY_LATE signals",
-    "Strict changeSinceEvent lower bound may reject some profitable late reversals"
+    "QORB is rare in live paper mode",
+    "Live logs often show EXPIRED because valid READY/READY_LATE windows are time-limited",
+    "EXPIRED signals are weak and should remain disabled",
+    "Relaxing score/status filters does not improve the tested result"
   ],
   "blockedChanges": [
-    "Do not allow all EXPIRED entries",
-    "Do not add QORB Scout v2 to live paper loop before parameter sweep",
-    "Do not increase trade frequency blindly",
-    "Do not change TP/SL before comparing parameter sets"
+    "Do not enable EXPIRED entries",
+    "Do not add WATCH or WAIT to live paper logic now",
+    "Do not lower minOpenScore now",
+    "Do not expand changeSinceEvent now",
+    "Do not create QORB Scout v2 from this dataset"
   ],
   "nextResearch": [
-    "Run QORB parameter sweep",
-    "Compare minOpenScore values: 35, 33, 30, 28",
-    "Compare changeSinceEvent lower bounds: -20, -25, -30",
-    "Compare allowed statuses: READY/READY_LATE only versus adding WATCH or WAIT",
-    "Keep EXPIRED disabled unless a separate reversal filter proves useful"
+    "Keep QORB active in paper mode with strict filters",
+    "Collect more live paper signals and trades",
+    "Review again after new READY/READY_LATE signals appear",
+    "Compare results on a larger candle sample later, e.g. QORB_CANDLES=3000",
+    "Only consider QORB v2 if a larger sample confirms a better non-strict configuration"
   ],
   "successCriteriaForV2": {
     "minimumSampleSignals": 20,
@@ -92,5 +95,22 @@
         "avgBounce24hPct": 6.13
       }
     }
+  },
+  "parameterSweepSummary": {
+    "generatedFrom": "npm run research:qorb-sweep after QORB_PROFILE=basket QORB_CANDLES=1500 npm run research:qorb-missed",
+    "expiredEnabled": false,
+    "bestConfig": {
+      "name": "strict_score35_change-20",
+      "allowedStatuses": "READY+READY_LATE",
+      "minScore": 35,
+      "changeSinceEvent": "-20..5",
+      "trades": 30,
+      "winRatePct": 80,
+      "takeProfit": 13,
+      "stopLoss": 6,
+      "avgGrossPct": 6.94,
+      "avgBounce24hPct": 4.99
+    },
+    "decision": "Keep current strict QORB logic. No live paper-loop change from this sweep."
   }
 }

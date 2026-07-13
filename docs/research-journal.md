@@ -73,3 +73,31 @@ Decision:
 
 Blocked change:
 - Do not add QORB v2 to paper loop until parameter sweep confirms better settings.
+
+## 2026-07-13 — QORB parameter sweep
+
+Command sequence:
+- QORB_PROFILE=basket QORB_CANDLES=1500 npm run research:qorb-missed
+- npm run research:qorb-sweep
+
+Best result:
+- Config: strict_score35_change-20.
+- Statuses: READY + READY_LATE.
+- Score: >= 35.
+- changeSinceEvent: -20..5.
+- Trades: 30.
+- Simulated win rate: 80%.
+- TP / SL: 13 / 6.
+- Average gross: 6.94%.
+- Average 24h bounce: 4.99%.
+
+Decision:
+- Do not relax QORB filters now.
+- Do not enable EXPIRED.
+- Do not add WATCH or WAIT to live paper logic now.
+- Keep current strict QORB logic in paper mode.
+
+Interpretation:
+- The problem is not that QORB is too strict.
+- QORB is a rare strategy and needs a fresh READY / READY_LATE window.
+- Next step is observation, not QORB v2.
