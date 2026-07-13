@@ -154,3 +154,62 @@ Decision:
 
 Blocked change:
 - No paper-loop integration until stronger backtest evidence exists.
+
+---
+
+## 2026-07-13 — Gold Index Phase 2: threshold sweep
+
+Command:
+- npm run research:gold-index-sweep
+
+Scope:
+- Research only.
+- No Railway paper-loop changes.
+- No live trading.
+- No real orders.
+- No private API keys.
+
+Data:
+- Crypto symbols: BTC-USDT, ETH-USDT, SOL-USDT.
+- Gold proxy candidates: XAUT-USDT, PAXG-USDT.
+- Bar: 1D.
+- Target candles: 500.
+- Thresholds tested: 0.7%, 1.0%, 1.5%, 2.0% 2D gold-proxy change.
+- Forward windows tested: 1D, 2D, 3D, 5D.
+- Added adverse/favorable move checks after signal.
+
+Best observed rows:
+- XAUT-USDT -> ETH-USDT, threshold 1.5%:
+  - Signals: 97 / 497.
+  - Baseline average 2D forward return: 0.05%.
+  - Signal average 2D forward return: 0.22%.
+  - Edge: 0.17%.
+  - Hit rate 2D: 51.5%.
+  - Average MAE 2D: -3.96%.
+  - Candidate: false.
+
+- XAUT-USDT -> BTC-USDT, threshold 1.0%:
+  - Signals: 136 / 497.
+  - Baseline average 2D forward return: -0.07%.
+  - Signal average 2D forward return: 0.07%.
+  - Edge: 0.14%.
+  - Hit rate 2D: 52.9%.
+  - Average MAE 2D: -2.60%.
+  - Candidate: false.
+
+Negative findings:
+- XAUT 2.0% threshold worsened BTC, ETH, and SOL results.
+- PAXG results were consistently weaker than XAUT.
+- SOL had high adverse movement after signals.
+- No tested threshold produced a validated candidate.
+
+Decision:
+- Gold-only Index is not strong enough as a standalone strategy.
+- Do not add Gold Index to Railway paper loop.
+- Do not enable BTC, ETH, or SOL Gold Index paper entries.
+- Keep Gold Index as research only.
+
+Next:
+- Test combined macro logic only after choosing a DXY data source.
+- Best next hypothesis: DXY down + XAUT up over 2 days.
+- Until then, Gold Index remains a macro-context research idea, not a paper strategy.
