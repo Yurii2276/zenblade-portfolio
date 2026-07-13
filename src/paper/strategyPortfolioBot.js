@@ -322,8 +322,49 @@ function closePosition({ position, exitPrice, reason, balance }) {
   };
 }
 
+function tradeNetPnl(trade) {
+  return Number(trade.netPnl ?? trade.netPnlUsdt ?? 0);
+}
+
+function tradeGrossPnl(trade) {
+  return Number(trade.grossPnl ?? trade.grossPnlUsdt ?? 0);
+}
+
+function tradeFees(trade) {
+  return Number(trade.fees ?? trade.feeUsdt ?? 0);
+}
+
 function sumNetPnl(trades) {
-  return trades.reduce((sum, trade) => sum + Number(trade.netPnl ?? trade.netPnlUsdt ?? 0), 0);
+  return trades.reduce((sum, trade) => sum + tradeNetPnl(trade), 0);
+}
+
+function buildTradeStats(trades) {
+  const stats = {
+    count: trades.length,
+    wins: 0,
+    losses: 0,
+    breakeven: 0,
+    grossPnl: 0,
+    fees: 0,
+    netPnl: 0,
+    winrate: 0,
+  };
+
+  for (const trade of trades) {
+    const netPnl = tradeNetPnl(trade);
+
+    stats.netPnl += netPnl;
+    stats.grossPnl += tradeGrossPnl(trade);
+    stats.fees += tradeFees(trade);
+
+    if (netPnl > 0) stats.wins += 1;
+    else if (netPnl < 0) stats.losses += 1;
+    else stats.breakeven += 1;
+  }
+
+  stats.winrate = stats.count > 0 ? round((stats.wins / stats.count) * 100, 1) : 0;
+
+  return stats;
 }
 
 function groupPnlByStrategy(trades) {
@@ -331,16 +372,90 @@ function groupPnlByStrategy(trades) {
 
   for (const trade of trades) {
     const key = trade.strategyName ?? trade.strategy ?? trade.strategyId ?? "Unknown strategy";
-    const current = grouped.get(key) ?? { count: 0, pnl: 0 };
+    const current =
+      grouped.get(key) ?? {
+        count: 0,
+        wins: 0,
+        losses: 0,
+        breakeven: 0,
+        grossPnl: 0,
+        fees: 0,
+        netPnl: 0,
+      };
+
+    const netPnl = tradeNetPnl(trade);
+
     current.count += 1;
-    current.pnl += Number(trade.netPnl ?? trade.netPnlUsdt ?? 0);
+    current.netPnl += netPnl;
+    current.grossPnl += tradeGrossPnl(trade);
+    current.fees += tradeFees(trade);
+
+    if (netPnl > 0) current.wins += 1;
+    else if (netPnl < 0) current.losses += 1;
+    else current.breakeven += 1;
+
     grouped.set(key, current);
   }
 
   return [...grouped.entries()]
     .map(([strategy, value]) => {
-      const sign = value.pnl >= 0 ? "+" : "";
-      return `- ${strategy}: ${value.count} trades, ${sign}${round(value.pnl, 2)} USDT`;
+      const sign = value.netPnl >= 0 ? "+" : "";
+      const winrate = value.count > 0 ? round((value.wins / value.count) * 100, 1) : 0;
+
+      return `- ${strategy}: ${value.count} trades, net ${sign}${round(value.netPnl, 2)} USDT, winrate ${winrate}%, fees ${round(value.fees, 2)} USDT`;
+    })
+    .join("\n");
+}
+
+function formatLastTrades(trades, limit = 3) {
+  if (!trades.length) return "- no closed trades yet";
+
+  return trades
+    .slice(-limit)
+    .reverse()
+    .map((trade) => {
+      const strategy = trade.strategyName ?? trade.strategy ?? trade.strategyId ?? "Unknown strategy";
+      const symbol = trade.symbol ?? trade.asset ?? "UNKNOWN";
+      const side = trade.side ?? "UNKNOWN";
+      const exitRule = trade.exitRule ?? trade.reasonExit ?? "UNKNOWN_EXIT";
+      const netPnl = tradeNetPnl(trade);
+      const sign = netPnl >= 0 ? "+" : "";
+
+      return `- ${symbol} | ${side} | ${exitRule} | ${sign}${round(netPnl, 2)} USDT | ${strategy}`;
+    })
+    .join("\n");
+}
+
+function formatStrategyHealth(trades) {
+  const grouped = new Map();
+
+  for (const trade of trades) {
+    const key = trade.strategyName ?? trade.strategy ?? trade.strategyId ?? "Unknown strategy";
+    const current = grouped.get(key) ?? { count: 0, wins: 0, losses: 0, netPnl: 0 };
+    const netPnl = tradeNetPnl(trade);
+
+    current.count += 1;
+    current.netPnl += netPnl;
+
+    if (netPnl > 0) current.wins += 1;
+    if (netPnl < 0) current.losses += 1;
+
+    grouped.set(key, current);
+  }
+
+  if (!grouped.size) return "- no closed trades yet";
+
+  return [...grouped.entries()]
+    .map(([strategy, value]) => {
+      let status = "not enough data";
+
+      if (value.count >= 5) {
+        if (value.netPnl > 0 && value.wins >= value.losses) status = "profitable";
+        else if (value.netPnl < 0 && value.losses > value.wins) status = "losing";
+        else status = "mixed";
+      }
+
+      return `- ${strategy}: ${status} (${value.count} trades)`;
     })
     .join("\n");
 }
@@ -355,11 +470,16 @@ async function notifyStatusIfDue(state, trades) {
     return;
   }
 
+  const stats = buildTradeStats(trades);
   const totalPnl = round(sumNetPnl(trades), 2);
   const startBalance = baseConfig.initialBalance ?? 1000;
   const pnlPct = startBalance > 0 ? round((totalPnl / startBalance) * 100, 3) : 0;
   const pnlSign = totalPnl >= 0 ? "+" : "";
+  const grossSign = stats.grossPnl >= 0 ? "+" : "";
+  const netSign = stats.netPnl >= 0 ? "+" : "";
   const strategyLines = groupPnlByStrategy(trades) || "- no closed trades yet";
+  const lastTrades = formatLastTrades(trades, 3);
+  const healthLines = formatStrategyHealth(trades);
 
   const message =
     `📊 ZenBlade PAPER STATUS\n` +
@@ -367,11 +487,22 @@ async function notifyStatusIfDue(state, trades) {
     `Balance: ${round(state.balance, 2)} USDT\n` +
     `Total PnL: ${pnlSign}${totalPnl} USDT (${pnlSign}${pnlPct}%)\n` +
     `Open positions: ${state.openPositions.length}\n` +
-    `Closed trades: ${trades.length}\n\n` +
-    `PnL by strategy:\n${strategyLines}`;
+    `Closed trades: ${trades.length}\n` +
+    `Wins/Losses: ${stats.wins}/${stats.losses} | Winrate: ${stats.winrate}%\n` +
+    `Gross PnL: ${grossSign}${round(stats.grossPnl, 2)} USDT\n` +
+    `Fees: ${round(stats.fees, 2)} USDT\n` +
+    `Net PnL: ${netSign}${round(stats.netPnl, 2)} USDT\n\n` +
+    `PnL by strategy:\n${strategyLines}\n\n` +
+    `Last closed trades:\n${lastTrades}\n\n` +
+    `Strategy health:\n${healthLines}`;
 
-  state.lastStatusAt = new Date().toISOString();
-  await sendTelegramMessage(message);
+  try {
+    await sendTelegramMessage(message);
+    state.lastStatusAt = new Date().toISOString();
+    console.log(`TELEGRAM | STATUS_SENT | closed ${trades.length} | netPnL ${round(stats.netPnl, 2)}`);
+  } catch (error) {
+    console.error(`TELEGRAM | STATUS_FAILED | ${error.message}`);
+  }
 }
 
 async function notifyOpen(position) {
