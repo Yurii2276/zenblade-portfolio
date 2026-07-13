@@ -21,3 +21,6 @@ reports/qorb-reversal-research.csv
 
 # Paper bot runtime state
 data/
+
+# Generated research reports
+reports/

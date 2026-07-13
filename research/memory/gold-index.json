@@ -2,23 +2,107 @@
   "strategyId": "gold-index",
   "strategyName": "ZenBlade Gold Index Strategy",
   "mode": "planned_research",
-  "status": "not_started",
+  "status": "threshold_sweep_completed_no_candidate",
   "lastUpdated": "2026-07-13",
   "currentObservation": {
     "implemented": false,
-    "paperLoopEnabled": false
+    "paperLoopEnabled": false,
+    "researchScriptCreated": true,
+    "researchScript": "src/research/goldIndexResearch.js",
+    "thresholdSweepScript": "src/research/goldIndexThresholdSweep.js",
+    "dxySource": "missing_in_repo",
+    "goldProxySources": {
+      "XAUT-USDT": {
+        "available": true,
+        "loadedDailyCandles": 499,
+        "interpretation": "usable OKX gold proxy for research"
+      },
+      "PAXG-USDT": {
+        "available": true,
+        "loadedDailyCandles": 271,
+        "interpretation": "usable but shorter history than XAUT"
+      }
+    }
   },
-  "lastDecision": "Do not start Gold Index until QORB review and research memory structure are in place.",
-  "knownProblems": [],
+  "lastDecision": "Gold Index Phase 2 threshold sweep found no validated candidate. Do not add Gold Index to Railway paper loop.",
+  "researchResults": {
+    "phase1": {
+      "name": "data_audit_and_event_study",
+      "bar": "1D",
+      "targetCandles": 500,
+      "goldThreshold": "2D gold proxy change >= 0.7%",
+      "bestObservedPair": {
+        "goldSymbol": "XAUT-USDT",
+        "cryptoSymbol": "BTC-USDT",
+        "alignedDays": 497,
+        "signalDays": 163,
+        "baselineAvgForward2dPct": -0.07,
+        "signalAvgForward2dPct": -0.03,
+        "signalHitRateForward2dPct": 52.8,
+        "interpretation": "marginal only; not enough edge for paper trading"
+      }
+    },
+    "phase2": {
+      "name": "threshold_sweep",
+      "thresholdsTested": [0.7, 1.0, 1.5, 2.0],
+      "holdDaysTested": [1, 2, 3, 5],
+      "candidateFound": false,
+      "bestObservedRows": [
+        {
+          "goldSymbol": "XAUT-USDT",
+          "cryptoSymbol": "ETH-USDT",
+          "threshold": 1.5,
+          "alignedDays": 497,
+          "signalDays": 97,
+          "baselineAvgForward2dPct": 0.05,
+          "signalAvgForward2dPct": 0.22,
+          "edge2dPct": 0.17,
+          "signalHitRateForward2dPct": 51.5,
+          "signalAvgMae2dPct": -3.96,
+          "candidate": false,
+          "interpretation": "best positive ETH row, but edge and hit rate are too weak"
+        },
+        {
+          "goldSymbol": "XAUT-USDT",
+          "cryptoSymbol": "BTC-USDT",
+          "threshold": 1.0,
+          "alignedDays": 497,
+          "signalDays": 136,
+          "baselineAvgForward2dPct": -0.07,
+          "signalAvgForward2dPct": 0.07,
+          "edge2dPct": 0.14,
+          "signalHitRateForward2dPct": 52.9,
+          "signalAvgMae2dPct": -2.6,
+          "candidate": false,
+          "interpretation": "slightly positive but too small for strategy validation"
+        }
+      ],
+      "negativeFindings": [
+        "XAUT 2.0% threshold worsened BTC, ETH, and SOL results",
+        "PAXG results were consistently weaker than XAUT",
+        "SOL had high adverse movement after signals",
+        "No threshold met candidate criteria"
+      ]
+    }
+  },
+  "knownProblems": [
+    "DXY data source is not implemented in the repo",
+    "Gold-only signal does not clearly improve ETH or SOL forward returns",
+    "XAUT to BTC and XAUT to ETH results are marginal only",
+    "PAXG history is shorter and results are weaker than XAUT",
+    "Higher XAUT threshold does not reliably improve forward returns"
+  ],
   "blockedChanges": [
-    "Do not add directly to Railway paper loop before research/backtest",
-    "Do not mix Gold strategy development with QORB fixes in the same branch"
+    "Do not add Gold Index directly to Railway paper loop",
+    "Do not treat XAUT->BTC or XAUT->ETH marginal result as validated strategy",
+    "Do not enable BTC, ETH, or SOL Gold Index paper entries from Phase 1 or Phase 2",
+    "Do not mix Gold Index work with QORB fixes in the same branch"
   ],
   "nextResearch": [
-    "Define data source",
-    "Define entry/exit rules",
-    "Create research script",
-    "Run backtest",
-    "Only then consider paper-loop integration"
+    "Decide whether Gold Index should remain only a macro context filter",
+    "Add or choose a DXY data source before testing DXY + Gold macro logic",
+    "Test combined condition: DXY down and XAUT up over 2 days",
+    "Compare crypto forward returns after DXY+XAUT macro signal",
+    "Only consider paper-loop integration if combined macro research shows stronger edge"
   ]
 }

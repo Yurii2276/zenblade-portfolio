@@ -461,3 +461,76 @@ Rule:
 - No strategy filter should be relaxed blindly.
 - No strategy should be added to the live paper loop before research/backtest.
 - Every major research result must update the relevant memory JSON.
+
+---
+
+## Candidate 4 — ZenBlade Gold Index Strategy
+
+Status: research completed, no standalone candidate yet.  
+Mode: research only.  
+Real trading: no.  
+Paper live: no.
+
+### Idea
+
+Gold Index перевіряє macro/context гіпотезу:
+
+- якщо gold proxy росте;
+- crypto може мати risk-on вікно;
+- перевіряємо BTC-USDT, ETH-USDT, SOL-USDT після сильних рухів XAUT-USDT або PAXG-USDT.
+
+### Phase 1 — data source audit
+
+Result:
+- XAUT-USDT доступний як OKX gold proxy.
+- PAXG-USDT доступний, але має коротшу історію.
+- DXY source у repo поки відсутній.
+
+Best marginal row:
+- XAUT-USDT -> BTC-USDT.
+- Threshold: gold 2D change >= 0.7%.
+- Baseline average 2D forward return: -0.07%.
+- Signal average 2D forward return: -0.03%.
+- Hit rate: 52.8%.
+
+Interpretation:
+- Дані є, але edge дуже слабкий.
+
+### Phase 2 — threshold sweep
+
+Tested thresholds:
+- 0.7%;
+- 1.0%;
+- 1.5%;
+- 2.0%.
+
+Best observed rows:
+- XAUT-USDT -> ETH-USDT, threshold 1.5%:
+  - signal average 2D return: 0.22%;
+  - edge: 0.17%;
+  - hit rate: 51.5%;
+  - average MAE: -3.96%;
+  - candidate: false.
+
+- XAUT-USDT -> BTC-USDT, threshold 1.0%:
+  - signal average 2D return: 0.07%;
+  - edge: 0.14%;
+  - hit rate: 52.9%;
+  - average MAE: -2.60%;
+  - candidate: false.
+
+### Decision
+
+Gold-only Index is not strong enough as a standalone paper strategy.
+
+Blocked:
+- Do not add Gold Index to Railway paper loop.
+- Do not enable BTC/ETH/SOL paper entries from gold-only signal.
+- Do not treat XAUT/PAXG-only movement as validated edge.
+
+Next possible research:
+- Add or choose DXY data source.
+- Test combined macro condition:
+  - DXY down over 2 days;
+  - XAUT up over 2 days.
+- Only if DXY + XAUT combination shows stronger edge, consider a future paper candidate.
