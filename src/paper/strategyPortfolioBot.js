@@ -614,7 +614,7 @@ async function evaluateStrategySymbol({ strategy, symbol, state }) {
 
   if (state.lastProcessedCandleByKey[key] === lastCandle.time) {
     if (LOG_WAIT) {
-      console.log(`WAIT | ${strategy.strategyName} | ${symbol} | candle already processed`);
+        console.log(`WAIT | ${strategy.strategyName} | ${symbol} | candle already processed`);
     }
     return;
   }
