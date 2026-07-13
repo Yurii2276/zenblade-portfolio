@@ -1,0 +1,35 @@
+{
+  "strategyId": "qorb-pump-reversal",
+  "strategyName": "QORB Pump Reversal Basket",
+  "mode": "paper/research",
+  "status": "under_review",
+  "lastUpdated": "2026-07-13",
+  "currentObservation": {
+    "livePaperEntries": 0,
+    "dominantHoldReason": "EXPIRED",
+    "knownIssue": "The strategy detects pump events but often rejects them because the event is no longer READY or READY_LATE."
+  },
+  "lastDecision": "Do not relax QORB filters before missed-opportunities audit.",
+  "knownProblems": [
+    "Too many EXPIRED signals",
+    "No recent live paper entries",
+    "Strict status gate allows only READY and READY_LATE"
+  ],
+  "blockedChanges": [
+    "Do not allow all EXPIRED entries without reversal evidence",
+    "Do not increase trade frequency blindly",
+    "Do not add QORB v2 to live paper loop before research report"
+  ],
+  "nextResearch": [
+    "Run missed-opportunities audit",
+    "For each rejected QORB signal, measure price path after 1h, 3h, 6h, 12h, 24h",
+    "Compare hypothetical TP/SL outcomes for READY, READY_LATE, WATCH and EXPIRED statuses",
+    "Decide whether EXPIRED_BUT_REVERSING scout mode is justified"
+  ],
+  "successCriteriaForV2": {
+    "minimumSampleSignals": 20,
+    "minimumHypotheticalProfitFactor": 1.1,
+    "minimumWinRatePct": 40,
+    "maxAllowedDrawdownUSDT": 50
+  }
+}
