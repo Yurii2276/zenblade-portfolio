@@ -1,0 +1,28 @@
+{
+  "strategyId": "eth-pullback-context",
+  "strategyName": "ETH Pullback Context",
+  "mode": "paper",
+  "status": "active_observation",
+  "lastUpdated": "2026-07-13",
+  "currentObservation": {
+    "closedTrades": 2,
+    "netPnlUSDT": -1.04,
+    "openPositions": 0,
+    "sampleSize": "too_small"
+  },
+  "lastDecision": "Keep active until at least 5 to 10 closed trades.",
+  "knownProblems": [
+    "Early trades are slightly negative",
+    "Fees matter because trade edge is small",
+    "Sample size too small for final decision"
+  ],
+  "blockedChanges": [
+    "Do not disable based only on 2 trades",
+    "Do not increase position size"
+  ],
+  "nextResearch": [
+    "Review after 5 to 10 closed trades",
+    "Measure gross PnL versus fees",
+    "Check whether stop-loss exits dominate"
+  ]
+}

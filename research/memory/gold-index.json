@@ -1,0 +1,24 @@
+{
+  "strategyId": "gold-index",
+  "strategyName": "ZenBlade Gold Index Strategy",
+  "mode": "planned_research",
+  "status": "not_started",
+  "lastUpdated": "2026-07-13",
+  "currentObservation": {
+    "implemented": false,
+    "paperLoopEnabled": false
+  },
+  "lastDecision": "Do not start Gold Index until QORB review and research memory structure are in place.",
+  "knownProblems": [],
+  "blockedChanges": [
+    "Do not add directly to Railway paper loop before research/backtest",
+    "Do not mix Gold strategy development with QORB fixes in the same branch"
+  ],
+  "nextResearch": [
+    "Define data source",
+    "Define entry/exit rules",
+    "Create research script",
+    "Run backtest",
+    "Only then consider paper-loop integration"
+  ]
+}

@@ -27,7 +27,8 @@
     "research:eth-portfolio": "node src/research/ethPortfolioResearch.js",
     "paper:strategies": "node src/paper/strategyPortfolioBot.js",
     "paper:strategies-loop": "node src/paper/strategyPortfolioLoop.js",
-    "paper:report": "node src/paper/reportStrategyPaper.js"
+    "paper:report": "node src/paper/reportStrategyPaper.js",
+    "research:memory": "node src/research/researchMemory.js"
   },
   "main": "src/index.js",
   "license": "MIT"

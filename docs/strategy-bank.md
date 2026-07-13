@@ -444,3 +444,20 @@ Decision:
 - QORB basket is the strongest QORB research profile so far.
 - Still research / paper only.
 - Not live-ready yet because portfolio-level drawdown control and walk-forward validation are still missing.
+
+---
+
+## Research memory rule — added 2026-07-13
+
+Before creating a new strategy or modifying an existing one, ZenBlade research memory must be reviewed first.
+
+Required files to check:
+- docs/research-journal.md
+- research/memory/*.json
+- reports/*.json
+- reports/*.csv
+
+Rule:
+- No strategy filter should be relaxed blindly.
+- No strategy should be added to the live paper loop before research/backtest.
+- Every major research result must update the relevant memory JSON.
