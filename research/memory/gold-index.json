@@ -2,7 +2,7 @@
   "strategyId": "gold-index",
   "strategyName": "ZenBlade Gold Index Strategy",
   "mode": "planned_research",
-  "status": "macro_combo_promising_needs_walk_forward",
+  "status": "walk_forward_promising_not_paper_enabled",
   "lastUpdated": "2026-07-14",
   "currentObservation": {
     "implemented": false,
@@ -29,7 +29,7 @@
       "fix": "Ignore Yahoo candles with close <= 0 and ignore macro 2D changes with absolute value above 5%."
     }
   },
-  "lastDecision": "Macro DXY down + XAUT up Phase 3 produced promising ETH and BTC candidates after DXY data cleanup, but it must pass walk-forward/window validation before any paper-loop integration.",
+  "lastDecision": "Macro DXY down + XAUT up strict scenario passed Phase 4 walk-forward validation as a promising research candidate. BTC is the most stable first paper candidate, ETH has stronger edge but higher regime risk, SOL remains research-only for now. Do not add to Railway paper loop yet.",
   "researchResults": {
     "phase1": {
       "name": "data_audit_and_event_study",
@@ -140,6 +140,65 @@
         "SOL has promising return but higher adverse movement and should not be first paper candidate",
         "SPX/NASDAQ/VIX confirmed versions have smaller sample and weaker edge"
       ]
+    },
+    "phase4": {
+      "name": "walk_forward_validation",
+      "scenario": "dxy_down_gold_up_strict",
+      "thresholds": {
+        "dxyMax2dPct": -0.3,
+        "xautMin2dPct": 1
+      },
+      "windows": 5,
+      "candidateFound": true,
+      "summary": [
+        {
+          "cryptoSymbol": "BTC-USDT",
+          "signalDays": 45,
+          "baselineAvgForward2dPct": -0.09,
+          "signalAvgForward2dPct": 1.05,
+          "edge2dPct": 1.14,
+          "hitRateForward2dPct": 62.2,
+          "avgMae2dPct": -1.82,
+          "worstMae2dPct": -9.47,
+          "windowsWithSignals": 5,
+          "positiveEdgeWindows": 4,
+          "positiveSignalWindows": 4,
+          "interpretation": "most stable candidate and lowest average MAE"
+        },
+        {
+          "cryptoSymbol": "ETH-USDT",
+          "signalDays": 45,
+          "baselineAvgForward2dPct": 0.03,
+          "signalAvgForward2dPct": 1.75,
+          "edge2dPct": 1.72,
+          "hitRateForward2dPct": 66.7,
+          "avgMae2dPct": -3.02,
+          "worstMae2dPct": -11.21,
+          "windowsWithSignals": 5,
+          "positiveEdgeWindows": 3,
+          "positiveSignalWindows": 4,
+          "interpretation": "strongest edge but less stable than BTC because one window was very negative"
+        },
+        {
+          "cryptoSymbol": "SOL-USDT",
+          "signalDays": 45,
+          "baselineAvgForward2dPct": -0.15,
+          "signalAvgForward2dPct": 1.75,
+          "edge2dPct": 1.9,
+          "hitRateForward2dPct": 60,
+          "avgMae2dPct": -3.52,
+          "worstMae2dPct": -11.25,
+          "windowsWithSignals": 5,
+          "positiveEdgeWindows": 3,
+          "positiveSignalWindows": 4,
+          "interpretation": "promising return but higher adverse movement; keep research-only for now"
+        }
+      ],
+      "caution": [
+        "Window 4 from 2025-12-23 to 2026-03-31 was negative for BTC, ETH, and SOL",
+        "The signal is promising but not regime-proof",
+        "Paper strategy should start conservatively and should not include SOL first"
+      ]
     }
   },
   "knownProblems": [
@@ -150,19 +209,23 @@
     "Higher XAUT threshold does not reliably improve forward returns",
     "Yahoo macro data can include zero-close placeholder candles and needs cleaning",
     "Phase 3 candidate may still be overfit until walk-forward/window validation is completed",
-    "PAXG-based macro combinations are weak compared with XAUT"
+    "PAXG-based macro combinations are weak compared with XAUT",
+    "Walk-forward validation found one clearly negative regime window from 2025-12-23 to 2026-03-31",
+    "ETH has stronger edge than BTC but higher adverse movement and weaker window stability",
+    "SOL is more volatile and should remain research-only until stronger risk controls are tested"
   ],
   "blockedChanges": [
     "Do not add Gold Index directly to Railway paper loop",
-    "Do not enable BTC, ETH, or SOL macro Gold/DXY paper entries before walk-forward validation",
+    "Do not enable BTC, ETH, or SOL macro Gold/DXY paper entries before paper module design and dry-run tests",
     "Do not use raw Yahoo DXY data without zero-close and abnormal-change filtering",
-    "Do not treat Phase 3 as live-ready"
+    "Do not treat Phase 4 as live-ready",
+    "Do not enable SOL as first paper candidate"
   ],
   "nextResearch": [
-    "Create Phase 4 walk-forward/window validation for DXY down + XAUT up strict scenario",
-    "Validate ETH-USDT and BTC-USDT separately across 4 to 6 time windows",
-    "Check 1D, 2D, 3D, and 5D forward returns plus MAE/MFE",
-    "If Phase 4 remains strong, design a paper-only strategy module with duplicate-position protection and TTL",
-    "Only then consider paper-loop integration"
+    "Design Phase 5 paper-only strategy module for Macro Gold DXY",
+    "Prefer BTC-USDT as conservative first candidate and ETH-USDT as aggressive candidate",
+    "Add duplicate-position protection, signal TTL, planned 2D hold exit, and clear BUY/HOLD/EXIT reasons",
+    "Add dry-run tests before any paper-loop integration",
+    "Only after tests consider a disabled-by-default paper-loop integration"
   ]
 }
