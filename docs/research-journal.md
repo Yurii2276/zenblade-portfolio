@@ -288,3 +288,78 @@ Blocked:
 - No paper-loop integration until Phase 4 validation.
 - No live trading.
 - No real orders.
+
+---
+
+## 2026-07-14 — Macro Gold + DXY Phase 4 Walk-Forward Validation
+
+Command:
+- npm run research:macro-gold-dxy-walk-forward
+
+Scope:
+- Research only.
+- No Railway paper-loop changes.
+- No live trading.
+- No real orders.
+- No private API keys.
+
+Scenario tested:
+- DXY 2D change <= -0.3%.
+- XAUT 2D change >= +1.0%.
+- Hold windows checked: 1D, 2D, 3D, 5D.
+- Main decision metric: 2D forward return.
+- Validation windows: 5.
+
+Summary:
+- BTC-USDT, ETH-USDT, and SOL-USDT all returned candidate=true.
+- However, stability differs by asset.
+
+BTC-USDT:
+- Signals: 45.
+- Baseline average 2D return: -0.09%.
+- Signal average 2D return: 1.05%.
+- Edge 2D: 1.14%.
+- Hit rate 2D: 62.2%.
+- Average MAE 2D: -1.82%.
+- Positive edge windows: 4/5.
+- Interpretation: most stable first paper candidate.
+
+ETH-USDT:
+- Signals: 45.
+- Baseline average 2D return: 0.03%.
+- Signal average 2D return: 1.75%.
+- Edge 2D: 1.72%.
+- Hit rate 2D: 66.7%.
+- Average MAE 2D: -3.02%.
+- Positive edge windows: 3/5.
+- Interpretation: strongest edge but higher regime risk than BTC.
+
+SOL-USDT:
+- Signals: 45.
+- Baseline average 2D return: -0.15%.
+- Signal average 2D return: 1.75%.
+- Edge 2D: 1.90%.
+- Hit rate 2D: 60.0%.
+- Average MAE 2D: -3.52%.
+- Positive edge windows: 3/5.
+- Interpretation: promising but too volatile for first paper candidate.
+
+Important caution:
+- Window 4, from 2025-12-23 to 2026-03-31, was negative for all tested assets.
+- BTC was the most stable across windows.
+- ETH had the strongest total edge but a weaker bad-regime profile.
+- SOL should remain research-only for now.
+
+Decision:
+- Mark Macro Gold + DXY as walk-forward promising.
+- Do not add to Railway paper loop yet.
+- Next phase should be a paper-only strategy module with dry-run tests.
+- Preferred first candidate: BTC-USDT conservative.
+- Optional second candidate: ETH-USDT aggressive.
+- Do not enable SOL first.
+
+Blocked:
+- No live trading.
+- No real orders.
+- No Railway paper-loop integration.
+- No SOL paper candidate until additional risk filters are tested.
