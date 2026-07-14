@@ -22,8 +22,12 @@ import path from "node:path";
 import { config as baseConfig } from "../config.js";
 import { fetchHistoricalCandles } from "../okxClient.js";
 
-const STATE_PATH = path.resolve("data/macro-gold-dxy-paper-state.json");
-const TRADES_PATH = path.resolve("data/macro-gold-dxy-paper-trades.json");
+const STATE_PATH = path.resolve(
+  process.env.MACRO_GOLD_DXY_STATE_PATH ?? "data/macro-gold-dxy-paper-state.json"
+);
+const TRADES_PATH = path.resolve(
+  process.env.MACRO_GOLD_DXY_TRADES_PATH ?? "data/macro-gold-dxy-paper-trades.json"
+);
 
 const DRY_RUN = process.env.MACRO_GOLD_DXY_DRY_RUN !== "false";
 const BAR = process.env.MACRO_GOLD_DXY_BAR ?? "1D";
