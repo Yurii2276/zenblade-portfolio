@@ -2,7 +2,7 @@
   "strategyId": "gold-index",
   "strategyName": "ZenBlade Gold Index Strategy",
   "mode": "planned_research",
-  "status": "paper_module_tests_passed_not_integrated",
+  "status": "disabled_integration_tests_passed_not_railway_enabled",
   "lastUpdated": "2026-07-14",
   "currentObservation": {
     "implemented": false,
@@ -55,7 +55,7 @@
       ]
     }
   },
-  "lastDecision": "Phase 6 Macro Gold DXY paper module tests passed. Isolated paper persistence works, duplicate open-position protection works, MAX_HOLD_48H close works, and signal TTL blocks immediate re-entry. Module remains not integrated into Railway or the main paper loop.",
+  "lastDecision": "Phase 7 disabled-by-default Macro Gold DXY integration test passed. ENABLE_MACRO_GOLD_DXY=false keeps the module disabled. ENABLE_MACRO_GOLD_DXY=true runs the separate Macro Gold DXY module in dry-run mode. Dry-run integration did not create state/trades files. Railway remains unchanged and the module is not enabled in Railway.",
   "researchResults": {
     "phase1": {
       "name": "data_audit_and_event_study",
@@ -285,6 +285,41 @@
         "MAX_HOLD_48H close path works",
         "Test files were cleaned after successful run"
       ]
+    },
+    "phase7": {
+      "name": "disabled_by_default_integration_flag",
+      "tested": true,
+      "passed": true,
+      "branch": "strategy/macro-gold-dxy-disabled-integration",
+      "integrationFlag": "ENABLE_MACRO_GOLD_DXY",
+      "defaultEnabled": false,
+      "testScript": "src/paper/testMacroGoldDxyIntegrationFlag.js",
+      "npmScript": "test:macro-gold-dxy-integration",
+      "results": [
+        {
+          "run": 1,
+          "env": "ENABLE_MACRO_GOLD_DXY=false",
+          "expected": "integration disabled",
+          "result": "passed"
+        },
+        {
+          "run": 2,
+          "env": "ENABLE_MACRO_GOLD_DXY=true with MACRO_GOLD_DXY_DRY_RUN=true",
+          "expected": "integration runs separate module but does not create state/trades files",
+          "result": "passed"
+        }
+      ],
+      "safetyChecksPassed": [
+        "Integration is disabled by default",
+        "Explicit ENABLE_MACRO_GOLD_DXY=true is required to run the module",
+        "Enabled integration test used dry-run mode",
+        "Dry-run integration did not create macro state/trades files",
+        "Railway was not touched",
+        "No live trading",
+        "No real orders",
+        "No private API keys"
+      ],
+      "note": "A manual npm run paper:strategies smoke test was interrupted before the final disabled log, so the dedicated integration flag test is the main validation for this phase."
     }
   },
   "knownProblems": [
@@ -304,22 +339,24 @@
     "Paper mode persistence should be tested separately before any loop integration",
     "Macro Gold DXY module has passed isolated persistence tests but is still not integrated into the main paper loop",
     "Before integration, the module should be added disabled-by-default and reviewed after more dry-runs",
-    "Real macro signal is currently inactive because DXY is not down enough and XAUT is not up enough"
+    "Real macro signal is currently inactive because DXY is not down enough and XAUT is not up enough",
+    "Macro Gold DXY is integrated behind a disabled-by-default flag but is not enabled in Railway",
+    "Manual paper:strategies smoke test can take time because existing ETH/QORB scans run before the Macro Gold DXY disabled log",
+    "Real macro signal remains inactive because DXY is not down enough and XAUT is not up enough"
   ],
   "blockedChanges": [
-    "Do not add Gold Index directly to Railway paper loop",
     "Do not enable Macro Gold DXY in Railway yet",
-    "Do not use raw Yahoo DXY data without zero-close and abnormal-change filtering",
-    "Do not treat Phase 6 as live-ready",
-    "Do not enable SOL as first paper candidate",
     "Do not run with MACRO_GOLD_DXY_DRY_RUN=false in Railway",
-    "Do not integrate into main paper loop without disabled-by-default flag"
+    "Do not use raw Yahoo DXY data without zero-close and abnormal-change filtering",
+    "Do not treat Phase 7 as live-ready",
+    "Do not enable SOL as first paper candidate",
+    "Do not enable real trading or real orders"
   ],
   "nextResearch": [
-    "Prepare disabled-by-default integration plan for Macro Gold DXY into the main paper strategy portfolio",
-    "Keep BTC-USDT as conservative first candidate and ETH-USDT as aggressive candidate",
-    "Keep SOL disabled until additional risk filters are tested",
-    "Add explicit env flag for integration, e.g. ENABLE_MACRO_GOLD_DXY=false by default",
-    "Only after disabled integration, run local paper-loop test before any Railway change"
+    "Commit Phase 7 disabled-by-default integration and test script",
+    "Open PR and merge after review",
+    "After merge, sync main and run npm run test:macro-gold-dxy-integration",
+    "Only then consider Railway paper-mode enablement with ENABLE_MACRO_GOLD_DXY=true and MACRO_GOLD_DXY_DRY_RUN=true",
+    "Do not enable MACRO_GOLD_DXY_DRY_RUN=false in Railway"
   ]
 }

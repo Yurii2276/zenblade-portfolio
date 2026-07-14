@@ -489,3 +489,62 @@ Decision:
 - Macro Gold DXY module remains not integrated into Railway.
 - Macro Gold DXY module remains not integrated into the main paper strategy loop.
 - Next step: prepare disabled-by-default integration plan.
+
+---
+
+## 2026-07-14 — Macro Gold + DXY Phase 7 Disabled Integration Flag
+
+Command:
+- npm run test:macro-gold-dxy-integration
+
+Scope:
+- Disabled-by-default integration only.
+- No Railway changes.
+- No live trading.
+- No real orders.
+- No private API keys.
+
+Changes:
+- Added Macro Gold DXY integration helper to:
+  - src/paper/strategyPortfolioBot.js
+- Added explicit integration flag:
+  - ENABLE_MACRO_GOLD_DXY
+- Default behavior:
+  - ENABLE_MACRO_GOLD_DXY is not true, so Macro Gold DXY remains disabled.
+- Added focused integration flag test:
+  - src/paper/testMacroGoldDxyIntegrationFlag.js
+- Added npm script:
+  - test:macro-gold-dxy-integration
+
+Test flow:
+1. ENABLE_MACRO_GOLD_DXY=false:
+   - Expected: Macro Gold DXY integration does not run.
+   - Result: passed.
+
+2. ENABLE_MACRO_GOLD_DXY=true with MACRO_GOLD_DXY_DRY_RUN=true:
+   - Expected: Macro Gold DXY separate module runs.
+   - Expected: dry-run does not create state/trades files.
+   - Result: passed.
+
+Observed current macro signal:
+- Macro Gold DXY module returned SKIP.
+- DXY was not down enough.
+- XAUT was not up enough.
+
+Safety result:
+- Integration is disabled by default.
+- Explicit ENABLE_MACRO_GOLD_DXY=true is required.
+- Dry-run integration did not create macro state/trades files.
+- Railway was not touched.
+- No live trading.
+- No real orders.
+
+Manual smoke note:
+- npm run paper:strategies was started but interrupted before reaching the final Macro Gold DXY disabled log.
+- The dedicated test:macro-gold-dxy-integration script is the validation for this phase.
+
+Decision:
+- Mark Phase 7 integration flag test as passed.
+- Macro Gold DXY remains not enabled in Railway.
+- Macro Gold DXY remains dry-run/paper only.
+- Do not use MACRO_GOLD_DXY_DRY_RUN=false in Railway.

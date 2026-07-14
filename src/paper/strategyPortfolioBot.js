@@ -4,6 +4,7 @@ import { config as baseConfig } from "../config.js";
 import { fetchHistoricalCandles } from "../okxClient.js";
 import { getSignal } from "../strategy.js";
 import { sendTelegramMessage } from "../telegram.js";
+import { runMacroGoldDxyPaperModuleOnce } from "./macroGoldDxyPaperModule.js";
 
 const STATE_PATH = path.resolve("data/strategy-paper-state.json");
 const TRADES_PATH = path.resolve("data/strategy-paper-trades.json");
@@ -683,6 +684,23 @@ async function evaluateStrategySymbol({ strategy, symbol, state }) {
   await notifyOpen(position);
 }
 
+export function isMacroGoldDxyIntegrationEnabled() {
+  return process.env.ENABLE_MACRO_GOLD_DXY === "true";
+}
+
+export async function runMacroGoldDxyIntegrationIfEnabled() {
+  if (!isMacroGoldDxyIntegrationEnabled()) {
+    console.log("MACRO_GOLD_DXY | DISABLED | set ENABLE_MACRO_GOLD_DXY=true to run separate paper module");
+    return { enabled: false };
+  }
+
+  console.log("");
+  console.log("MACRO_GOLD_DXY | ENABLED | running separate paper module");
+  await runMacroGoldDxyPaperModuleOnce();
+
+  return { enabled: true };
+}
+
 export async function runStrategyPortfolioOnce() {
   if (baseConfig.paperOnly !== true) {
     throw new Error("Safety stop: paperOnly must be true");
@@ -711,6 +729,8 @@ export async function runStrategyPortfolioOnce() {
 
   await notifyStatusIfDue(state, trades);
   saveAll(state, trades);
+
+  await runMacroGoldDxyIntegrationIfEnabled();
 
   console.log();
   console.log(`Done. Balance: ${state.balance} USDT`);
