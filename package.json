@@ -34,7 +34,8 @@
     "research:gold-index": "node src/research/goldIndexResearch.js",
     "research:gold-index-sweep": "node src/research/goldIndexThresholdSweep.js",
     "research:macro-gold-dxy-index": "node src/research/macroGoldDxyIndexResearch.js",
-    "research:macro-gold-dxy-walk-forward": "node src/research/macroGoldDxyWalkForward.js"
+    "research:macro-gold-dxy-walk-forward": "node src/research/macroGoldDxyWalkForward.js",
+    "paper:macro-gold-dxy-dry-run": "node src/paper/macroGoldDxyPaperModule.js"
   },
   "main": "src/index.js",
   "license": "MIT"

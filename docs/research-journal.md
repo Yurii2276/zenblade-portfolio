@@ -363,3 +363,65 @@ Blocked:
 - No real orders.
 - No Railway paper-loop integration.
 - No SOL paper candidate until additional risk filters are tested.
+
+---
+
+## 2026-07-14 — Macro Gold + DXY Phase 5 Paper-Only Dry-Run Module
+
+Command:
+- npm run paper:macro-gold-dxy-dry-run
+
+Scope:
+- Paper/dry-run module only.
+- Not integrated into Railway.
+- Not integrated into the main paper strategy loop.
+- No live trading.
+- No real orders.
+- No private API keys.
+
+New module:
+- src/paper/macroGoldDxyPaperModule.js
+
+New npm script:
+- paper:macro-gold-dxy-dry-run
+
+Signal rules:
+- DXY 2D change <= -0.3%.
+- XAUT 2D change >= +1.0%.
+- Planned hold: 48 hours.
+- Signal TTL: 48 hours.
+
+Candidates:
+- BTC-USDT: conservative first candidate.
+- ETH-USDT: aggressive second candidate.
+- SOL-USDT: intentionally disabled for first module.
+
+Real current signal test:
+- Action: SKIP.
+- DXY 2D was about +0.11%, so DXY was not down enough.
+- XAUT 2D was about -2.13%, so XAUT was not up enough.
+- BTC-USDT and ETH-USDT were both skipped.
+
+Forced relaxed-threshold test:
+- Command used relaxed test thresholds only for dry-run:
+  - MACRO_GOLD_DXY_DXY_MAX_2D_PCT=1
+  - MACRO_GOLD_DXY_XAUT_MIN_2D_PCT=-3
+- Result:
+  - DRY_RUN_BUY for BTC-USDT.
+  - DRY_RUN_BUY for ETH-USDT.
+- State/trades were not saved.
+- No macro-gold-dxy state files were created.
+
+Safety result:
+- Dry-run branch works.
+- SKIP branch works.
+- BUY branch works only as DRY_RUN_BUY by default.
+- No state persistence in dry-run mode.
+- Main paper loop was not changed.
+- Railway was not changed.
+
+Decision:
+- Keep module as dry-run only.
+- Do not enable in Railway.
+- Do not integrate into main paper loop yet.
+- Next step: add focused tests for duplicate-position protection, signal TTL, and paper persistence before any loop integration.
