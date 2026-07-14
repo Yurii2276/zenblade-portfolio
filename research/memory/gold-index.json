@@ -2,15 +2,15 @@
   "strategyId": "gold-index",
   "strategyName": "ZenBlade Gold Index Strategy",
   "mode": "planned_research",
-  "status": "threshold_sweep_completed_no_candidate",
-  "lastUpdated": "2026-07-13",
+  "status": "macro_combo_promising_needs_walk_forward",
+  "lastUpdated": "2026-07-14",
   "currentObservation": {
     "implemented": false,
     "paperLoopEnabled": false,
     "researchScriptCreated": true,
     "researchScript": "src/research/goldIndexResearch.js",
     "thresholdSweepScript": "src/research/goldIndexThresholdSweep.js",
-    "dxySource": "missing_in_repo",
+    "dxySource": "Yahoo DX-Y.NYB cleaned",
     "goldProxySources": {
       "XAUT-USDT": {
         "available": true,
@@ -22,9 +22,14 @@
         "loadedDailyCandles": 271,
         "interpretation": "usable but shorter history than XAUT"
       }
+    },
+    "macroComboScript": "src/research/macroGoldDxyIndexResearch.js",
+    "dxyDataQualityFix": {
+      "problem": "Yahoo returned zero-close placeholder candles for DXY, causing fake -100% 2D changes.",
+      "fix": "Ignore Yahoo candles with close <= 0 and ignore macro 2D changes with absolute value above 5%."
     }
   },
-  "lastDecision": "Gold Index Phase 2 threshold sweep found no validated candidate. Do not add Gold Index to Railway paper loop.",
+  "lastDecision": "Macro DXY down + XAUT up Phase 3 produced promising ETH and BTC candidates after DXY data cleanup, but it must pass walk-forward/window validation before any paper-loop integration.",
   "researchResults": {
     "phase1": {
       "name": "data_audit_and_event_study",
@@ -44,8 +49,18 @@
     },
     "phase2": {
       "name": "threshold_sweep",
-      "thresholdsTested": [0.7, 1.0, 1.5, 2.0],
-      "holdDaysTested": [1, 2, 3, 5],
+      "thresholdsTested": [
+        0.7,
+        1,
+        1.5,
+        2
+      ],
+      "holdDaysTested": [
+        1,
+        2,
+        3,
+        5
+      ],
       "candidateFound": false,
       "bestObservedRows": [
         {
@@ -65,7 +80,7 @@
         {
           "goldSymbol": "XAUT-USDT",
           "cryptoSymbol": "BTC-USDT",
-          "threshold": 1.0,
+          "threshold": 1,
           "alignedDays": 497,
           "signalDays": 136,
           "baselineAvgForward2dPct": -0.07,
@@ -83,6 +98,48 @@
         "SOL had high adverse movement after signals",
         "No threshold met candidate criteria"
       ]
+    },
+    "phase3": {
+      "name": "macro_gold_dxy_index",
+      "sourceFixApplied": true,
+      "candidateFound": true,
+      "bestObservedRows": [
+        {
+          "scenario": "dxy_down_gold_up_strict",
+          "goldSymbol": "XAUT-USDT",
+          "cryptoSymbol": "ETH-USDT",
+          "signalDays": 43,
+          "baselineAvgForward2dPct": 0.03,
+          "signalAvgForward2dPct": 1.56,
+          "edge2dPct": 1.53,
+          "signalHitRateForward2dPct": 65.1,
+          "signalAvgMae2dPct": -3.09,
+          "avgDxy2dPct": -0.73,
+          "avgGold2dPct": 2.12,
+          "candidate": true,
+          "interpretation": "strongest current macro combo candidate"
+        },
+        {
+          "scenario": "dxy_down_gold_up_strict",
+          "goldSymbol": "XAUT-USDT",
+          "cryptoSymbol": "BTC-USDT",
+          "signalDays": 43,
+          "baselineAvgForward2dPct": -0.09,
+          "signalAvgForward2dPct": 0.88,
+          "edge2dPct": 0.97,
+          "signalHitRateForward2dPct": 60.5,
+          "signalAvgMae2dPct": -1.88,
+          "avgDxy2dPct": -0.73,
+          "avgGold2dPct": 2.12,
+          "candidate": true,
+          "interpretation": "BTC also promising with lower average MAE than ETH"
+        }
+      ],
+      "rejectedOrCautionRows": [
+        "PAXG-based macro combinations remain weak or negative",
+        "SOL has promising return but higher adverse movement and should not be first paper candidate",
+        "SPX/NASDAQ/VIX confirmed versions have smaller sample and weaker edge"
+      ]
     }
   },
   "knownProblems": [
@@ -90,19 +147,22 @@
     "Gold-only signal does not clearly improve ETH or SOL forward returns",
     "XAUT to BTC and XAUT to ETH results are marginal only",
     "PAXG history is shorter and results are weaker than XAUT",
-    "Higher XAUT threshold does not reliably improve forward returns"
+    "Higher XAUT threshold does not reliably improve forward returns",
+    "Yahoo macro data can include zero-close placeholder candles and needs cleaning",
+    "Phase 3 candidate may still be overfit until walk-forward/window validation is completed",
+    "PAXG-based macro combinations are weak compared with XAUT"
   ],
   "blockedChanges": [
     "Do not add Gold Index directly to Railway paper loop",
-    "Do not treat XAUT->BTC or XAUT->ETH marginal result as validated strategy",
-    "Do not enable BTC, ETH, or SOL Gold Index paper entries from Phase 1 or Phase 2",
-    "Do not mix Gold Index work with QORB fixes in the same branch"
+    "Do not enable BTC, ETH, or SOL macro Gold/DXY paper entries before walk-forward validation",
+    "Do not use raw Yahoo DXY data without zero-close and abnormal-change filtering",
+    "Do not treat Phase 3 as live-ready"
   ],
   "nextResearch": [
-    "Decide whether Gold Index should remain only a macro context filter",
-    "Add or choose a DXY data source before testing DXY + Gold macro logic",
-    "Test combined condition: DXY down and XAUT up over 2 days",
-    "Compare crypto forward returns after DXY+XAUT macro signal",
-    "Only consider paper-loop integration if combined macro research shows stronger edge"
+    "Create Phase 4 walk-forward/window validation for DXY down + XAUT up strict scenario",
+    "Validate ETH-USDT and BTC-USDT separately across 4 to 6 time windows",
+    "Check 1D, 2D, 3D, and 5D forward returns plus MAE/MFE",
+    "If Phase 4 remains strong, design a paper-only strategy module with duplicate-position protection and TTL",
+    "Only then consider paper-loop integration"
   ]
 }

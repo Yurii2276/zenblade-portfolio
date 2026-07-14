@@ -32,7 +32,8 @@
     "research:qorb-missed": "node src/research/qorbMissedOpportunities.js",
     "research:qorb-sweep": "node src/research/qorbParameterSweep.js",
     "research:gold-index": "node src/research/goldIndexResearch.js",
-    "research:gold-index-sweep": "node src/research/goldIndexThresholdSweep.js"
+    "research:gold-index-sweep": "node src/research/goldIndexThresholdSweep.js",
+    "research:macro-gold-dxy-index": "node src/research/macroGoldDxyIndexResearch.js"
   },
   "main": "src/index.js",
   "license": "MIT"
