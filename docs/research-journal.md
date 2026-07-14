@@ -425,3 +425,67 @@ Decision:
 - Do not enable in Railway.
 - Do not integrate into main paper loop yet.
 - Next step: add focused tests for duplicate-position protection, signal TTL, and paper persistence before any loop integration.
+
+---
+
+## 2026-07-14 — Macro Gold + DXY Phase 6 Paper Module Tests
+
+Command:
+- npm run test:macro-gold-dxy-paper
+
+Scope:
+- Local paper persistence test only.
+- No Railway changes.
+- No live trading.
+- No real orders.
+- No private API keys.
+- Main paper-loop was not touched.
+
+Changes tested:
+- Added env overrides for Macro Gold DXY state/trades paths:
+  - MACRO_GOLD_DXY_STATE_PATH
+  - MACRO_GOLD_DXY_TRADES_PATH
+- Added focused test script:
+  - src/paper/testMacroGoldDxyPaperModule.js
+- Added npm script:
+  - test:macro-gold-dxy-paper
+
+Test setup:
+- MACRO_GOLD_DXY_DRY_RUN=false was used only with isolated test files.
+- Test state file:
+  - data/test-macro-gold-dxy-paper-state.json
+- Test trades file:
+  - data/test-macro-gold-dxy-paper-trades.json
+- Forced relaxed thresholds were used only for testing the BUY branch.
+- Test symbols:
+  - BTC-USDT only.
+
+Test flow:
+1. Run 1:
+   - Expected: open one BTC-USDT paper position.
+   - Result: passed.
+
+2. Run 2:
+   - Expected: skip duplicate entry because BTC-USDT position is already OPEN.
+   - Result: passed.
+
+3. Run 3:
+   - Position openedAt was manually aged by 49 hours.
+   - Expected: close old position by MAX_HOLD_48H.
+   - Expected: block immediate re-entry because signal TTL is still active.
+   - Result: passed.
+
+Result:
+- Paper persistence works in isolated test files.
+- Duplicate open-position protection works.
+- MAX_HOLD_48H close path works.
+- Signal TTL blocks immediate re-entry.
+- Test state/trades files were cleaned after test.
+- Main paper-loop was not touched.
+- Railway was not touched.
+
+Decision:
+- Mark Phase 6 as passed.
+- Macro Gold DXY module remains not integrated into Railway.
+- Macro Gold DXY module remains not integrated into the main paper strategy loop.
+- Next step: prepare disabled-by-default integration plan.

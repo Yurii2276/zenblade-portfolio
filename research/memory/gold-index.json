@@ -2,7 +2,7 @@
   "strategyId": "gold-index",
   "strategyName": "ZenBlade Gold Index Strategy",
   "mode": "planned_research",
-  "status": "paper_module_dry_run_created_not_integrated",
+  "status": "paper_module_tests_passed_not_integrated",
   "lastUpdated": "2026-07-14",
   "currentObservation": {
     "implemented": false,
@@ -55,7 +55,7 @@
       ]
     }
   },
-  "lastDecision": "Phase 5 Macro Gold DXY paper-only dry-run module was created and tested. Real current macro signal produced SKIP. Forced relaxed-threshold dry-run produced DRY_RUN_BUY for BTC-USDT and ETH-USDT without saving state/trades. Module is not integrated into Railway or the main paper loop.",
+  "lastDecision": "Phase 6 Macro Gold DXY paper module tests passed. Isolated paper persistence works, duplicate open-position protection works, MAX_HOLD_48H close works, and signal TTL blocks immediate re-entry. Module remains not integrated into Railway or the main paper loop.",
   "researchResults": {
     "phase1": {
       "name": "data_audit_and_event_study",
@@ -245,6 +245,46 @@
         "stateSaved": false,
         "interpretation": "BUY branch works in dry-run without state/trade persistence"
       }
+    },
+    "phase6": {
+      "name": "paper_module_duplicate_ttl_persistence_tests",
+      "tested": true,
+      "passed": true,
+      "branch": "strategy/macro-gold-dxy-paper-tests",
+      "testScript": "src/paper/testMacroGoldDxyPaperModule.js",
+      "npmScript": "test:macro-gold-dxy-paper",
+      "testStateFiles": {
+        "state": "data/test-macro-gold-dxy-paper-state.json",
+        "trades": "data/test-macro-gold-dxy-paper-trades.json",
+        "cleanedAfterTest": true
+      },
+      "testFlow": [
+        {
+          "run": 1,
+          "expected": "open one BTC-USDT paper position",
+          "result": "passed"
+        },
+        {
+          "run": 2,
+          "expected": "skip duplicate entry because BTC-USDT position is already OPEN",
+          "result": "passed"
+        },
+        {
+          "run": 3,
+          "expected": "close aged position by MAX_HOLD_48H and block immediate re-entry by signal TTL",
+          "result": "passed"
+        }
+      ],
+      "safetyChecksPassed": [
+        "Used isolated test state/trades files",
+        "Did not touch Railway",
+        "Did not touch main strategy paper state",
+        "Did not modify main paper loop",
+        "Duplicate open-position protection works",
+        "Signal TTL protection works",
+        "MAX_HOLD_48H close path works",
+        "Test files were cleaned after successful run"
+      ]
     }
   },
   "knownProblems": [
@@ -261,21 +301,25 @@
     "SOL is more volatile and should remain research-only until stronger risk controls are tested",
     "Macro Gold DXY module is dry-run only and not yet integrated into the main paper loop",
     "Current live macro condition does not pass because DXY is not down enough and XAUT is not up enough",
-    "Paper mode persistence should be tested separately before any loop integration"
+    "Paper mode persistence should be tested separately before any loop integration",
+    "Macro Gold DXY module has passed isolated persistence tests but is still not integrated into the main paper loop",
+    "Before integration, the module should be added disabled-by-default and reviewed after more dry-runs",
+    "Real macro signal is currently inactive because DXY is not down enough and XAUT is not up enough"
   ],
   "blockedChanges": [
     "Do not add Gold Index directly to Railway paper loop",
-    "Do not integrate Macro Gold DXY into the main paper loop before more dry-run/paper persistence tests",
+    "Do not enable Macro Gold DXY in Railway yet",
     "Do not use raw Yahoo DXY data without zero-close and abnormal-change filtering",
-    "Do not treat Phase 5 as live-ready",
+    "Do not treat Phase 6 as live-ready",
     "Do not enable SOL as first paper candidate",
-    "Do not run with MACRO_GOLD_DXY_DRY_RUN=false in Railway"
+    "Do not run with MACRO_GOLD_DXY_DRY_RUN=false in Railway",
+    "Do not integrate into main paper loop without disabled-by-default flag"
   ],
   "nextResearch": [
-    "Add a focused dry-run test script for duplicate-position protection and signal TTL",
-    "Test paper persistence locally with MACRO_GOLD_DXY_DRY_RUN=false only after reviewing state file behavior",
-    "Then consider disabled-by-default integration into the main paper loop",
+    "Prepare disabled-by-default integration plan for Macro Gold DXY into the main paper strategy portfolio",
     "Keep BTC-USDT as conservative first candidate and ETH-USDT as aggressive candidate",
-    "Keep SOL disabled until additional risk filters are tested"
+    "Keep SOL disabled until additional risk filters are tested",
+    "Add explicit env flag for integration, e.g. ENABLE_MACRO_GOLD_DXY=false by default",
+    "Only after disabled integration, run local paper-loop test before any Railway change"
   ]
 }
