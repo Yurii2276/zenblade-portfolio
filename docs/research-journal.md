@@ -213,3 +213,78 @@ Next:
 - Test combined macro logic only after choosing a DXY data source.
 - Best next hypothesis: DXY down + XAUT up over 2 days.
 - Until then, Gold Index remains a macro-context research idea, not a paper strategy.
+
+---
+
+## 2026-07-14 — Macro Gold + DXY Phase 3
+
+Command:
+- npm run research:macro-gold-dxy-index
+
+Scope:
+- Research only.
+- No Railway paper-loop changes.
+- No live trading.
+- No real orders.
+- No private API keys.
+
+Data sources:
+- OKX crypto candles: BTC-USDT, ETH-USDT, SOL-USDT.
+- OKX gold proxies: XAUT-USDT, PAXG-USDT.
+- Yahoo macro data:
+  - DXY: DX-Y.NYB.
+  - SPX: ^GSPC.
+  - NASDAQ: ^IXIC.
+  - VIX: ^VIX.
+  - Gold futures: GC=F.
+
+Data quality issue:
+- Yahoo DXY returned zero-close placeholder candles.
+- These records created fake -100% 2D DXY changes.
+- The script was fixed to ignore Yahoo candles with close <= 0.
+- The script also filters abnormal macro 2D changes with abs(change) > 5%.
+
+Cleaned result:
+- DXY changes became realistic, around -0.72% to -0.73% for the best XAUT scenarios.
+
+Best current candidate:
+- Scenario: dxy_down_gold_up_strict.
+- Gold proxy: XAUT-USDT.
+- Crypto: ETH-USDT.
+- Signals: 43.
+- Baseline average 2D forward return: 0.03%.
+- Signal average 2D forward return: 1.56%.
+- Edge: 1.53%.
+- Hit rate 2D: 65.1%.
+- Average MAE 2D: -3.09%.
+- Candidate: true.
+
+Second candidate:
+- Scenario: dxy_down_gold_up_strict.
+- Gold proxy: XAUT-USDT.
+- Crypto: BTC-USDT.
+- Signals: 43.
+- Baseline average 2D forward return: -0.09%.
+- Signal average 2D forward return: 0.88%.
+- Edge: 0.97%.
+- Hit rate 2D: 60.5%.
+- Average MAE 2D: -1.88%.
+- Candidate: true.
+
+Interpretation:
+- Gold-only signal was weak.
+- Macro combination DXY down + XAUT up is meaningfully stronger.
+- XAUT is better than PAXG.
+- ETH has the strongest return edge.
+- BTC has lower adverse movement.
+- SOL is promising but riskier.
+
+Decision:
+- Mark Macro Gold + DXY as promising research candidate.
+- Do not add to Railway paper loop yet.
+- Next required step is walk-forward/window validation.
+
+Blocked:
+- No paper-loop integration until Phase 4 validation.
+- No live trading.
+- No real orders.
