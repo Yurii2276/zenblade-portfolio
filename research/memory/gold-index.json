@@ -2,7 +2,7 @@
   "strategyId": "gold-index",
   "strategyName": "ZenBlade Gold Index Strategy",
   "mode": "planned_research",
-  "status": "walk_forward_promising_not_paper_enabled",
+  "status": "paper_module_dry_run_created_not_integrated",
   "lastUpdated": "2026-07-14",
   "currentObservation": {
     "implemented": false,
@@ -27,9 +27,35 @@
     "dxyDataQualityFix": {
       "problem": "Yahoo returned zero-close placeholder candles for DXY, causing fake -100% 2D changes.",
       "fix": "Ignore Yahoo candles with close <= 0 and ignore macro 2D changes with absolute value above 5%."
+    },
+    "paperModule": {
+      "script": "src/paper/macroGoldDxyPaperModule.js",
+      "npmScript": "paper:macro-gold-dxy-dry-run",
+      "mode": "dry-run by default",
+      "integratedIntoMainPaperLoop": false,
+      "railwayEnabled": false,
+      "candidates": {
+        "conservative": "BTC-USDT",
+        "aggressive": "ETH-USDT",
+        "disabledFirst": "SOL-USDT"
+      },
+      "signalRules": {
+        "dxy2dChangeMaxPct": -0.3,
+        "xaut2dChangeMinPct": 1,
+        "holdHours": 48,
+        "signalTtlHours": 48
+      },
+      "safetyChecksPassed": [
+        "Real current macro signal returned SKIP",
+        "Forced relaxed-threshold dry-run returned DRY_RUN_BUY for BTC-USDT and ETH-USDT",
+        "DRY_RUN mode did not save state or trades",
+        "No macro-gold-dxy state files were created",
+        "Main strategyPortfolioBot STRATEGIES array was not modified",
+        "Railway paper loop was not modified"
+      ]
     }
   },
-  "lastDecision": "Macro DXY down + XAUT up strict scenario passed Phase 4 walk-forward validation as a promising research candidate. BTC is the most stable first paper candidate, ETH has stronger edge but higher regime risk, SOL remains research-only for now. Do not add to Railway paper loop yet.",
+  "lastDecision": "Phase 5 Macro Gold DXY paper-only dry-run module was created and tested. Real current macro signal produced SKIP. Forced relaxed-threshold dry-run produced DRY_RUN_BUY for BTC-USDT and ETH-USDT without saving state/trades. Module is not integrated into Railway or the main paper loop.",
   "researchResults": {
     "phase1": {
       "name": "data_audit_and_event_study",
@@ -199,6 +225,26 @@
         "The signal is promising but not regime-proof",
         "Paper strategy should start conservatively and should not include SOL first"
       ]
+    },
+    "phase5": {
+      "name": "paper_only_dry_run_module",
+      "created": true,
+      "tested": true,
+      "realSignalTest": {
+        "action": "SKIP",
+        "dxy2dPctApprox": 0.11,
+        "xaut2dPctApprox": -2.13,
+        "interpretation": "No current macro entry because DXY is not down enough and XAUT is not up enough"
+      },
+      "forcedSignalTest": {
+        "action": "DRY_RUN_BUY",
+        "symbols": [
+          "BTC-USDT",
+          "ETH-USDT"
+        ],
+        "stateSaved": false,
+        "interpretation": "BUY branch works in dry-run without state/trade persistence"
+      }
     }
   },
   "knownProblems": [
@@ -212,20 +258,24 @@
     "PAXG-based macro combinations are weak compared with XAUT",
     "Walk-forward validation found one clearly negative regime window from 2025-12-23 to 2026-03-31",
     "ETH has stronger edge than BTC but higher adverse movement and weaker window stability",
-    "SOL is more volatile and should remain research-only until stronger risk controls are tested"
+    "SOL is more volatile and should remain research-only until stronger risk controls are tested",
+    "Macro Gold DXY module is dry-run only and not yet integrated into the main paper loop",
+    "Current live macro condition does not pass because DXY is not down enough and XAUT is not up enough",
+    "Paper mode persistence should be tested separately before any loop integration"
   ],
   "blockedChanges": [
     "Do not add Gold Index directly to Railway paper loop",
-    "Do not enable BTC, ETH, or SOL macro Gold/DXY paper entries before paper module design and dry-run tests",
+    "Do not integrate Macro Gold DXY into the main paper loop before more dry-run/paper persistence tests",
     "Do not use raw Yahoo DXY data without zero-close and abnormal-change filtering",
-    "Do not treat Phase 4 as live-ready",
-    "Do not enable SOL as first paper candidate"
+    "Do not treat Phase 5 as live-ready",
+    "Do not enable SOL as first paper candidate",
+    "Do not run with MACRO_GOLD_DXY_DRY_RUN=false in Railway"
   ],
   "nextResearch": [
-    "Design Phase 5 paper-only strategy module for Macro Gold DXY",
-    "Prefer BTC-USDT as conservative first candidate and ETH-USDT as aggressive candidate",
-    "Add duplicate-position protection, signal TTL, planned 2D hold exit, and clear BUY/HOLD/EXIT reasons",
-    "Add dry-run tests before any paper-loop integration",
-    "Only after tests consider a disabled-by-default paper-loop integration"
+    "Add a focused dry-run test script for duplicate-position protection and signal TTL",
+    "Test paper persistence locally with MACRO_GOLD_DXY_DRY_RUN=false only after reviewing state file behavior",
+    "Then consider disabled-by-default integration into the main paper loop",
+    "Keep BTC-USDT as conservative first candidate and ETH-USDT as aggressive candidate",
+    "Keep SOL disabled until additional risk filters are tested"
   ]
 }
