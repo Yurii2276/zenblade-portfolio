@@ -39,7 +39,8 @@
     "test:macro-gold-dxy-paper": "node src/paper/testMacroGoldDxyPaperModule.js",
     "test:macro-gold-dxy-integration": "node src/paper/testMacroGoldDxyIntegrationFlag.js",
     "research:intraday-scalper": "node src/research/intradayScalperResearch.js",
-    "research:session-orb-vwap": "node src/research/sessionOrbVwapResearch.js"
+    "research:session-orb-vwap": "node src/research/sessionOrbVwapResearch.js",
+    "research:session-orb-vwap-v2": "node src/research/sessionOrbVwapV2Research.js"
   },
   "main": "src/index.js",
   "license": "MIT"
