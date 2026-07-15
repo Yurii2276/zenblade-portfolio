@@ -1,0 +1,80 @@
+{
+  "strategyId": "intraday-scalper-1d",
+  "strategyName": "ZenBlade Intraday Scalper 1D",
+  "mode": "research/paper",
+  "status": "research_script_added_pending_backtest",
+  "lastUpdated": "2026-07-15",
+  "currentObservation": {
+    "implemented": false,
+    "paperLoopEnabled": false,
+    "researchScriptCreated": true,
+    "researchScript": "src/research/intradayScalperResearch.js",
+    "npmScript": "research:intraday-scalper",
+    "reports": [
+      "reports/intraday-scalper-research.json",
+      "reports/intraday-scalper-research.csv"
+    ],
+    "symbols": [
+      "BTC-USDT",
+      "ETH-USDT",
+      "SOL-USDT",
+      "NEAR-USDT",
+      "TIA-USDT",
+      "AR-USDT",
+      "ORDI-USDT"
+    ],
+    "defaultBar": "5m",
+    "optionalBarsViaEnv": "INTRADAY_SCALPER_BARS=1m,3m,5m",
+    "backtestResult": "pending run in Replit or another environment with OKX network access"
+  },
+  "lastDecision": "Create research-only intraday/scalping script first. Do not touch Railway paper loop. Do not integrate into paper loop until research shows positive net PnL after fees/slippage, profit factor around or above 1.1, controlled drawdown, and diversified symbol contribution.",
+  "researchHypothesis": {
+    "type": "intraday momentum + pullback scalper",
+    "trendFilter": "EMA20 > EMA50 for LONG and EMA20 < EMA50 for SHORT",
+    "entry": "short pullback to EMA20 or VWAP followed by confirmation",
+    "confirmation": "volume spike or impulse candle",
+    "volatilityFilter": "ATR percent must be inside configured min/max range",
+    "riskControls": [
+      "maxTradesPerDay",
+      "cooldown after closed trade",
+      "maxDailyLossUSDT",
+      "one open position per symbol in the research simulation",
+      "mandatory stop-loss",
+      "mandatory take-profit",
+      "fees included",
+      "slippage included",
+      "no martingale",
+      "no position increase after loss"
+    ]
+  },
+  "knownProblems": [
+    "Intraday scalping edge can disappear after fees and slippage",
+    "High trade count can create overtrading without true edge",
+    "Small TP/SL makes fee and slippage assumptions critical",
+    "OKX public candle availability may differ by bar, especially for 1m/3m",
+    "Backtest has not been run yet in this branch"
+  ],
+  "blockedChanges": [
+    "Do not add Intraday Scalper 1D to Railway paper loop yet",
+    "Do not enable live trading",
+    "Do not use OKX API keys",
+    "Do not place real orders",
+    "Do not use martingale or increase position size after losses",
+    "Do not relax filters only to create more trades if net edge is negative after fees/slippage"
+  ],
+  "successCriteriaForFirstPass": {
+    "minimumTrades": "50-100 trades",
+    "netPnlAfterFees": "> 0",
+    "profitFactorPreferred": "> 1.1",
+    "drawdown": "controlled and acceptable relative to 1000 USDT paper balance",
+    "symbolDiversification": "result should not come from one coin only",
+    "paperLoopDecision": "if edge disappears after fees/slippage, do not add to paper loop"
+  },
+  "nextResearch": [
+    "Run npm run research:intraday-scalper on Replit or local environment with network access",
+    "Review reports/intraday-scalper-research.json and .csv",
+    "Check total trades, trades per day, win rate, gross PnL, fees, net PnL, profit factor, max drawdown, avg hold time, best/worst symbols, and best/worst hours",
+    "If no scenario passes, adjust parameters through controlled research rather than paper-loop integration",
+    "Only after a strong backtest result, consider a separate disabled-by-default paper module"
+  ]
+}
