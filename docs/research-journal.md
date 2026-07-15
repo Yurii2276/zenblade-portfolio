@@ -548,3 +548,79 @@ Decision:
 - Macro Gold DXY remains not enabled in Railway.
 - Macro Gold DXY remains dry-run/paper only.
 - Do not use MACRO_GOLD_DXY_DRY_RUN=false in Railway.
+
+---
+
+## 2026-07-15 — ZenBlade Intraday Scalper 1D Phase 1: first 5m backtest
+
+Command:
+- npm run research:intraday-scalper
+
+Scope:
+- Research only.
+- No Railway paper-loop changes.
+- No live trading.
+- No real orders.
+- No OKX API keys.
+
+Setup:
+- Symbols: BTC-USDT, ETH-USDT, SOL-USDT, NEAR-USDT, TIA-USDT, AR-USDT, ORDI-USDT.
+- Bar: 5m.
+- Candles: 5999 per symbol.
+- Fee rate: 0.0008.
+- Slippage: 0.0002.
+- Strategy idea: EMA20/EMA50 intraday momentum + pullback to EMA20/VWAP with volume or impulse confirmation.
+
+Results:
+- base_ema20_50_pullback:
+  - Trades: 1171.
+  - Trades/day: 53.23.
+  - Win rate: 33.6%.
+  - Gross PnL: -134.87 USDT.
+  - Fees: 448.45 USDT.
+  - Net PnL: -583.32 USDT.
+  - Profit factor: 0.32.
+  - Max drawdown: 585.17 USDT.
+  - Candidate: false.
+
+- fast_more_trades:
+  - Trades: 1761.
+  - Trades/day: 80.05.
+  - Win rate: 31.5%.
+  - Gross PnL: -202.84 USDT.
+  - Fees: 585.39 USDT.
+  - Net PnL: -788.23 USDT.
+  - Profit factor: 0.19.
+  - Max drawdown: 788.90 USDT.
+  - Candidate: false.
+
+- strict_quality:
+  - Trades: 863.
+  - Trades/day: 39.23.
+  - Win rate: 31.9%.
+  - Gross PnL: -91.51 USDT.
+  - Fees: 335.21 USDT.
+  - Net PnL: -426.72 USDT.
+  - Profit factor: 0.38.
+  - Max drawdown: 429.14 USDT.
+  - Candidate: false.
+
+Interpretation:
+- First-pass Intraday Scalper 1D failed.
+- The problem is not only fees/slippage: gross PnL was already negative in every scenario.
+- Fees are too large because trade count is excessive.
+- No tested symbol finished profitable.
+- Worst recurring UTC hours: 00:00, 05:00, 07:00, 08:00.
+- Best observed UTC hours were around 14:00, 21:00, and 22:00, but this is not enough for integration.
+
+Decision:
+- Do not integrate Intraday Scalper 1D into Railway paper loop.
+- Do not enable as paper strategy.
+- Treat this exact EMA20/EMA50 pullback scalper version as rejected.
+- Further work must be research-only.
+
+Next:
+- Either test a much narrower time-of-day filtered variant.
+- Or pivot to session-based intraday logic such as opening-range breakout / liquidity sweep / VWAP reclaim.
+- Any next version must first show positive gross PnL before fees and positive net PnL after fees/slippage.
+
