@@ -2,7 +2,7 @@
   "strategyId": "session-orb-vwap",
   "strategyName": "ZenBlade Session ORB + VWAP Reclaim",
   "mode": "research/paper",
-  "status": "research_script_added_pending_backtest",
+  "status": "first_backtest_failed_do_not_integrate",
   "lastUpdated": "2026-07-15",
   "currentObservation": {
     "implemented": false,
@@ -21,9 +21,63 @@
     ],
     "defaultBar": "5m",
     "targetCandles": 6000,
-    "backtestResult": "pending run in Replit or another environment with OKX network access"
+    "backtestResult": {
+      "date": "2026-07-15",
+      "bar": "5m",
+      "candlesPerSymbol": 5999,
+      "symbols": ["BTC-USDT", "ETH-USDT", "SOL-USDT"],
+      "feeRate": 0.0008,
+      "slippagePct": 0.0002,
+      "scenarioResults": [
+        {
+          "scenarioId": "orb_breakout_conservative",
+          "trades": 49,
+          "tradesPerDay": 2.23,
+          "winRatePct": 36.7,
+          "grossPnl": -0.54,
+          "fees": 21.95,
+          "netPnl": -22.49,
+          "profitFactor": 0.51,
+          "maxDrawdown": 24.45,
+          "avgHoldMinutes": 54.6,
+          "candidate": false,
+          "bestSymbols": ["ETH-USDT:-2.42", "SOL-USDT:-8.22", "BTC-USDT:-11.85"],
+          "worstHoursUtc": ["14:00=-14.93", "20:00=-4.9", "21:00=-3.6"]
+        },
+        {
+          "scenarioId": "vwap_reclaim_after_sweep",
+          "trades": 42,
+          "tradesPerDay": 1.91,
+          "winRatePct": 35.7,
+          "grossPnl": 8.31,
+          "fees": 16.8,
+          "netPnl": -8.49,
+          "profitFactor": 0.69,
+          "maxDrawdown": 14.92,
+          "avgHoldMinutes": 50.1,
+          "candidate": false,
+          "bestSymbols": ["ETH-USDT:1.34", "BTC-USDT:-4.8", "SOL-USDT:-5.03"],
+          "worstHoursUtc": ["22:00=-3.63", "15:00=-2.8", "21:00=-1.84"]
+        },
+        {
+          "scenarioId": "orb_vwap_retest",
+          "trades": 73,
+          "tradesPerDay": 3.32,
+          "winRatePct": 30.1,
+          "grossPnl": -1.01,
+          "fees": 27.82,
+          "netPnl": -28.83,
+          "profitFactor": 0.5,
+          "maxDrawdown": 28.92,
+          "avgHoldMinutes": 72.7,
+          "candidate": false,
+          "bestSymbols": ["ETH-USDT:-0.28", "BTC-USDT:-8.65", "SOL-USDT:-19.9"],
+          "worstHoursUtc": ["09:00=-13.66", "10:00=-6.46", "21:00=-3.62"]
+        }
+      ]
+    }
   },
-  "lastDecision": "Create a separate research-only Session ORB + VWAP Reclaim script after the first EMA intraday scalper failed. Do not touch Railway paper loop. Do not integrate until research shows positive net PnL after fees/slippage, profit factor around or above 1.1, controlled drawdown, low overtrading, and symbol/session robustness.",
+  "lastDecision": "First 5m backtest failed first-pass criteria. Do not integrate Session ORB + VWAP Reclaim into Railway paper loop. The strategy is far safer than the failed EMA scalper because trade frequency and drawdown are controlled, but the tested variants still do not have enough net edge after fees/slippage.",
   "researchHypothesis": {
     "type": "session-based intraday event strategy",
     "primaryIdea": "Trade only after a defined session opening range forms, then enter either confirmed ORB continuation or fakeout/VWAP reclaim/rejection.",
@@ -48,23 +102,31 @@
   },
   "scenarios": [
     "orb_breakout_conservative",
-    "vwap_reclaim_fakeout",
-    "orb_retest_vwap_blend"
+    "vwap_reclaim_after_sweep",
+    "orb_vwap_retest"
   ],
   "knownProblems": [
+    "No scenario passed first-pass criteria",
+    "Only vwap_reclaim_after_sweep had positive gross PnL, but fees turned it negative",
+    "ORB breakout and ORB VWAP retest had slightly negative gross PnL before fees",
+    "Win rate was only about 30.1% to 36.7%",
+    "Profit factor was too low: about 0.50 to 0.69",
+    "ETH was the least bad symbol and was slightly positive only in the VWAP reclaim scenario",
+    "SOL was weak, especially in the ORB VWAP retest scenario",
+    "Some UTC hours/sessions are clearly weak and need filtering before any retest",
     "Session definitions may overfit to the tested date range",
     "Crypto trades 24/7 so session windows are less clean than equity market opens",
     "False breakouts can remain frequent without good confirmation filters",
-    "VWAP can lag during sharp liquidation or news moves",
-    "Backtest has not been run yet in this branch"
+    "VWAP can lag during sharp liquidation or news moves"
   ],
   "blockedChanges": [
-    "Do not add Session ORB VWAP to Railway paper loop yet",
+    "Do not add Session ORB VWAP to Railway paper loop",
     "Do not enable live trading",
     "Do not use OKX API keys",
     "Do not place real orders",
     "Do not use martingale or increase position size after losses",
-    "Do not expand to illiquid altcoins before BTC/ETH/SOL show edge"
+    "Do not expand to illiquid altcoins before BTC/ETH/SOL show edge",
+    "Do not treat low drawdown alone as edge because net PnL is still negative"
   ],
   "successCriteriaForFirstPass": {
     "minimumTrades": "at least 30-80 trades preferred, but fewer is acceptable if multiple sessions/symbols are represented",
@@ -77,10 +139,11 @@
     "paperLoopDecision": "if edge disappears after fees/slippage or only one scenario/symbol works by chance, do not add to paper loop"
   },
   "nextResearch": [
-    "Run npm run research:session-orb-vwap on Replit or local environment with OKX network access",
-    "Review reports/session-orb-vwap-research.json and .csv",
-    "Check total trades, trades per day, win rate, gross PnL, fees, net PnL, profit factor, max drawdown, avg hold time, best/worst symbols, best/worst sessions, and best/worst setup types",
-    "If no scenario passes, adjust session filters and setup logic through controlled research rather than paper-loop integration",
-    "Only after a strong backtest result, consider a separate disabled-by-default paper module"
+    "Do not integrate the current version into Railway paper loop",
+    "Use vwap_reclaim_after_sweep as the only potentially salvageable branch because gross PnL was positive before fees",
+    "Test ETH-only and ETH/BTC-only VWAP reclaim variants before adding SOL back",
+    "Reduce fee drag by requiring stronger R multiple, fewer trades, and better session/hour filters",
+    "Review raw report by symbol, session, side, signal type, and exit reason before changing code",
+    "If the next variant cannot produce positive net PnL after fees/slippage, reject Session ORB VWAP v1"
   ]
 }
