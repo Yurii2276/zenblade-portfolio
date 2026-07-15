@@ -1,0 +1,86 @@
+{
+  "strategyId": "session-orb-vwap",
+  "strategyName": "ZenBlade Session ORB + VWAP Reclaim",
+  "mode": "research/paper",
+  "status": "research_script_added_pending_backtest",
+  "lastUpdated": "2026-07-15",
+  "currentObservation": {
+    "implemented": false,
+    "paperLoopEnabled": false,
+    "researchScriptCreated": true,
+    "researchScript": "src/research/sessionOrbVwapResearch.js",
+    "npmScript": "research:session-orb-vwap",
+    "reports": [
+      "reports/session-orb-vwap-research.json",
+      "reports/session-orb-vwap-research.csv"
+    ],
+    "defaultSymbols": [
+      "BTC-USDT",
+      "ETH-USDT",
+      "SOL-USDT"
+    ],
+    "defaultBar": "5m",
+    "targetCandles": 6000,
+    "backtestResult": "pending run in Replit or another environment with OKX network access"
+  },
+  "lastDecision": "Create a separate research-only Session ORB + VWAP Reclaim script after the first EMA intraday scalper failed. Do not touch Railway paper loop. Do not integrate until research shows positive net PnL after fees/slippage, profit factor around or above 1.1, controlled drawdown, low overtrading, and symbol/session robustness.",
+  "researchHypothesis": {
+    "type": "session-based intraday event strategy",
+    "primaryIdea": "Trade only after a defined session opening range forms, then enter either confirmed ORB continuation or fakeout/VWAP reclaim/rejection.",
+    "whyDifferentFromFailedScalper": [
+      "Does not trade all day",
+      "Does not use EMA pullback as the main edge",
+      "Uses a defined intraday event: opening range, breakout, fakeout, VWAP reclaim or rejection",
+      "Limits trades per session and per day",
+      "Starts with liquid symbols only: BTC, ETH, SOL"
+    ],
+    "riskControls": [
+      "maxTradesPerDay per symbol",
+      "one trade per session per symbol",
+      "mandatory stop-loss",
+      "mandatory take-profit",
+      "fees included",
+      "slippage included",
+      "no martingale",
+      "no position increase after loss",
+      "time-based exit"
+    ]
+  },
+  "scenarios": [
+    "orb_breakout_conservative",
+    "vwap_reclaim_fakeout",
+    "orb_retest_vwap_blend"
+  ],
+  "knownProblems": [
+    "Session definitions may overfit to the tested date range",
+    "Crypto trades 24/7 so session windows are less clean than equity market opens",
+    "False breakouts can remain frequent without good confirmation filters",
+    "VWAP can lag during sharp liquidation or news moves",
+    "Backtest has not been run yet in this branch"
+  ],
+  "blockedChanges": [
+    "Do not add Session ORB VWAP to Railway paper loop yet",
+    "Do not enable live trading",
+    "Do not use OKX API keys",
+    "Do not place real orders",
+    "Do not use martingale or increase position size after losses",
+    "Do not expand to illiquid altcoins before BTC/ETH/SOL show edge"
+  ],
+  "successCriteriaForFirstPass": {
+    "minimumTrades": "at least 30-80 trades preferred, but fewer is acceptable if multiple sessions/symbols are represented",
+    "tradesPerDay": "low frequency preferred, ideally below 10 across the tested basket",
+    "netPnlAfterFees": "> 0",
+    "profitFactorPreferred": "> 1.1",
+    "drawdown": "controlled and acceptable relative to 1000 USDT paper balance",
+    "grossPnlBeforeFees": "must be positive; otherwise the strategy has no directional edge",
+    "symbolDiversification": "result should not depend on one symbol only",
+    "paperLoopDecision": "if edge disappears after fees/slippage or only one scenario/symbol works by chance, do not add to paper loop"
+  },
+  "nextResearch": [
+    "Run npm run research:session-orb-vwap on Replit or local environment with OKX network access",
+    "Review reports/session-orb-vwap-research.json and .csv",
+    "Check total trades, trades per day, win rate, gross PnL, fees, net PnL, profit factor, max drawdown, avg hold time, best/worst symbols, best/worst sessions, and best/worst setup types",
+    "If no scenario passes, adjust session filters and setup logic through controlled research rather than paper-loop integration",
+    "Only after a strong backtest result, consider a separate disabled-by-default paper module"
+  ]
+}
