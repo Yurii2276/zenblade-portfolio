@@ -2,7 +2,7 @@
   "strategyId": "session-orb-vwap-v2",
   "strategyName": "ZenBlade Session ORB + VWAP Reclaim v2",
   "mode": "research/paper",
-  "status": "promising_small_sample_requires_robustness",
+  "status": "weak_persistent_edge_requires_window_validation",
   "lastUpdated": "2026-07-17",
   "currentObservation": {
     "implemented": false,
@@ -10,172 +10,154 @@
     "researchScriptCreated": true,
     "researchScript": "src/research/sessionOrbVwapV2Research.js",
     "npmScript": "research:session-orb-vwap-v2",
+    "robustnessScript": "src/research/sessionOrbVwapV2Robustness.js",
+    "robustnessNpmScript": "research:session-orb-vwap-v2-robustness",
     "reports": [
       "reports/session-orb-vwap-v2-research.json",
-      "reports/session-orb-vwap-v2-research.csv"
+      "reports/session-orb-vwap-v2-research.csv",
+      "reports/session-orb-vwap-v2-robustness.json",
+      "reports/session-orb-vwap-v2-robustness.csv"
     ],
-    "defaultSymbols": [
-      "ETH-USDT",
-      "BTC-USDT"
-    ],
+    "defaultSymbols": ["ETH-USDT", "BTC-USDT"],
     "defaultBar": "5m",
-    "targetCandles": 6000,
-    "backtestResult": "Promising but too small: 7 to 10 trades per scenario. Four of five variants were net positive after fees/slippage, but no scenario met minimum sample requirements."
+    "latestTargetCandles": 18000,
+    "backtestResult": "The leading combined scenario stayed slightly positive on 17999 candles per symbol, but the margin is thin and most variants are near break-even. No paper-loop integration."
   },
-  "lastDecision": "Do not integrate into Railway or paper loop. V2 produced the first promising Session ORB/VWAP result, but the sample is too small for a strategy decision. Freeze parameters and run a larger-history robustness test before any further tuning.",
+  "lastDecision": "Freeze v2 parameters. Do not integrate into Railway or paper loop. The 18000-candle test suggests a weak persistent edge in eth_btc_reclaim_quality, but fees and session-end exits consume most of it. Run frozen-parameter chronological window and fee-sensitivity validation before any further tuning.",
   "priorFindingFromV1": {
     "v1Status": "first_backtest_failed_do_not_integrate",
     "v1BestComponent": "vwap_reclaim_after_sweep",
     "v1BestComponentResult": {
       "trades": 42,
-      "tradesPerDay": 1.91,
-      "winRatePct": 35.7,
       "grossPnl": 8.31,
       "fees": 16.8,
       "netPnl": -8.49,
       "profitFactor": 0.69,
       "maxDrawdown": 14.92
-    },
-    "interpretation": "V1 suggested a weak gross edge in sweep -> VWAP reclaim/rejection. V2 narrowed the setup and improved net results, but its first sample remains too small."
+    }
   },
-  "firstV2Backtest": {
+  "firstV2Backtest6000": {
+    "interpretation": "Promising but too small: 7 to 10 trades per scenario. Four of five variants were net positive after fees/slippage.",
+    "leadingScenario": {
+      "scenarioId": "eth_btc_reclaim_quality",
+      "trades": 10,
+      "grossPnl": 8.07,
+      "fees": 3.5,
+      "netPnl": 4.57,
+      "profitFactor": 2.36,
+      "maxDrawdown": 1.59
+    }
+  },
+  "largerHistoryBacktest18000": {
     "bar": "5m",
-    "candlesPerSymbol": 5999,
-    "symbols": [
-      "ETH-USDT",
-      "BTC-USDT"
-    ],
+    "candlesPerSymbol": 17999,
+    "symbols": ["ETH-USDT", "BTC-USDT"],
     "feeRate": 0.0008,
     "slippagePct": 0.0002,
     "results": {
       "eth_btc_reclaim_quality": {
-        "trades": 10,
-        "tradesPerDay": 0.45,
-        "winRatePct": 50,
-        "grossPnl": 8.07,
-        "fees": 3.5,
-        "netPnl": 4.57,
-        "profitFactor": 2.36,
-        "maxDrawdown": 1.59,
-        "candidate": false
+        "trades": 25,
+        "tradesPerDay": 0.39,
+        "winRatePct": 40,
+        "grossPnl": 10.68,
+        "fees": 8.75,
+        "netPnl": 1.93,
+        "profitFactor": 1.21,
+        "maxDrawdown": 3.75,
+        "ethNetPnl": 3.8,
+        "btcNetPnl": -1.87,
+        "sessionEndTrades": 15,
+        "sessionEndNetPnl": -6.83
       },
       "eth_only_reclaim_quality": {
-        "trades": 7,
-        "tradesPerDay": 0.32,
-        "winRatePct": 57.1,
-        "grossPnl": 6.82,
-        "fees": 2.45,
-        "netPnl": 4.37,
-        "profitFactor": 2.76,
-        "maxDrawdown": 1.73,
-        "candidate": false
+        "trades": 14,
+        "grossPnl": 5.45,
+        "fees": 4.9,
+        "netPnl": 0.55,
+        "profitFactor": 1.08,
+        "maxDrawdown": 3.97
       },
       "late_us_reclaim_only": {
-        "trades": 7,
-        "tradesPerDay": 0.32,
-        "winRatePct": 42.9,
-        "grossPnl": 2.57,
-        "fees": 2.24,
-        "netPnl": 0.33,
-        "profitFactor": 1.07,
-        "maxDrawdown": 2.73,
-        "candidate": false
+        "trades": 11,
+        "grossPnl": 3.68,
+        "fees": 3.52,
+        "netPnl": 0.16,
+        "profitFactor": 1.03,
+        "maxDrawdown": 2.73
       },
       "long_only_reclaim": {
-        "trades": 8,
-        "tradesPerDay": 0.36,
-        "winRatePct": 37.5,
-        "grossPnl": 3.3,
-        "fees": 2.56,
-        "netPnl": 0.74,
-        "profitFactor": 1.17,
-        "maxDrawdown": 2.73,
-        "candidate": false
+        "trades": 12,
+        "grossPnl": 4.14,
+        "fees": 3.84,
+        "netPnl": 0.3,
+        "profitFactor": 1.05,
+        "maxDrawdown": 2.73
       },
       "short_only_rejection": {
-        "trades": 7,
-        "tradesPerDay": 0.32,
-        "winRatePct": 42.9,
-        "grossPnl": 3.68,
-        "fees": 2.24,
-        "netPnl": 1.44,
-        "profitFactor": 1.65,
-        "maxDrawdown": 1.68,
-        "candidate": false
+        "trades": 22,
+        "grossPnl": 3.67,
+        "fees": 7.04,
+        "netPnl": -3.37,
+        "profitFactor": 0.63,
+        "maxDrawdown": 4.94,
+        "sessionEndTrades": 15,
+        "sessionEndNetPnl": -7.44
       }
     },
     "interpretation": [
-      "All tested variants had positive gross PnL.",
-      "Four of five variants had positive net PnL after fees and slippage.",
-      "ETH contributed most of the positive result; BTC remained weak in several variants.",
-      "Short-only rejection was stronger than long-only reclaim on this sample.",
-      "The best combined quality scenario had PF 2.36 but only 10 trades.",
-      "No candidate passed because the sample is below the minimum robustness threshold."
+      "The combined quality scenario remained slightly positive and reached 25 trades.",
+      "Profit factor fell from 2.36 on 6000 candles to 1.21 on 18000 candles, showing that the initial sample overstated the edge.",
+      "ETH remained positive while BTC remained negative in the combined scenario.",
+      "Short-only rejection did not generalize and became net negative.",
+      "Late-US-only and long-only variants are effectively near break-even after fees.",
+      "Session-end exits are the largest visible drag, but parameters must remain frozen until window validation is complete."
     ]
   },
   "researchHypothesis": {
     "type": "focused session-based sweep and VWAP reclaim/rejection strategy",
     "primaryIdea": "Wait for a liquidity sweep outside the session opening range, then enter only if price reclaims or rejects VWAP with volume/impulse confirmation.",
-    "whyDifferentFromV1": [
-      "Removes broad ORB breakout and ORB retest scenarios",
-      "Focuses only on the setup that had positive gross PnL in v1",
-      "Starts with ETH and BTC only",
-      "Tests ETH-only, late-US-only, long-only, and short-only variants",
-      "Keeps low trade frequency and strict risk controls"
-    ],
     "riskControls": [
       "maxTradesPerDay per symbol",
       "one trade per session per symbol",
       "cooldown day after a losing trade",
-      "mandatory stop-loss",
-      "mandatory take-profit",
-      "fees included",
-      "slippage included",
-      "no martingale",
-      "no position increase after loss",
+      "mandatory stop-loss and take-profit",
+      "fees and slippage included",
+      "no martingale or position increase after loss",
       "time-based exit"
     ]
   },
-  "scenarios": [
-    "eth_btc_reclaim_quality",
-    "eth_only_reclaim_quality",
-    "late_us_reclaim_only",
-    "long_only_reclaim",
-    "short_only_rejection"
-  ],
   "knownProblems": [
-    "The first promising result is based on only 7 to 10 trades per scenario",
-    "The result may be specific to the most recent approximately 22-day window",
-    "ETH carried most of the positive result while BTC was weak in several subsets",
-    "Short-only and ETH-only subsets may overfit the small sample",
-    "Session definitions may not remain stable across market regimes",
-    "A larger-history run may reduce or remove the apparent edge"
+    "The leading edge is thin: net 1.93 USDT on 25 trades after 8.75 USDT fees",
+    "BTC reduced the combined result while ETH remained positive",
+    "Short-only rejection failed on the longer history",
+    "Most alternative scenarios are near break-even and vulnerable to small execution changes",
+    "Session-end exits create substantial negative drag",
+    "Chronological stability has not yet been verified",
+    "The strategy may fail at a slightly higher effective fee or slippage"
   ],
   "blockedChanges": [
-    "Do not add Session ORB VWAP v2 to Railway paper loop yet",
-    "Do not enable live trading",
+    "Do not add Session ORB VWAP v2 to Railway paper loop",
+    "Do not enable live trading or real orders",
     "Do not use OKX API keys",
-    "Do not place real orders",
-    "Do not use martingale or increase position size after losses",
-    "Do not tune parameters again before the larger-history robustness run",
-    "Do not declare success from 7 to 10 trades",
-    "Do not expand to illiquid altcoins"
+    "Do not tune session-end exits before the frozen-parameter validation",
+    "Do not remove BTC only because it was negative until time-window results are reviewed",
+    "Do not claim that short-only has edge",
+    "Do not expand to illiquid altcoins",
+    "Do not increase position size"
   ],
-  "successCriteriaForRobustness": {
-    "minimumTrades": "at least 25 to 40 trades in the leading scenario",
-    "grossPnlBeforeFees": "> 0",
-    "netPnlAfterFees": "> 0",
-    "profitFactorPreferred": "> 1.1",
-    "drawdown": "controlled and ideally below 12% of 1000 USDT paper balance",
-    "windowStability": "results should not depend on one recent short period",
-    "paperLoopDecision": "even a positive larger-history result still requires window or walk-forward validation before paper integration"
+  "successCriteriaForWindowValidation": {
+    "minimumTrades": "at least 20 in the leading scenario",
+    "overallNetPnl": "> 0",
+    "overallProfitFactor": ">= 1.1",
+    "positiveWindows": "at least 2 of 3 chronological windows",
+    "feeSensitivity": "must remain positive at current 0.0008 fee rate and preferably non-negative at 0.0010",
+    "paperLoopDecision": "a pass still requires independent out-of-sample or forward paper observation before integration"
   },
   "nextResearch": [
-    "Freeze current v2 parameters",
-    "Run SESSION_ORB_VWAP_V2_CANDLES=18000 npm run research:session-orb-vwap-v2",
-    "Compare the larger-history results with the 6000-candle baseline",
-    "Check whether ETH-only, combined quality, and short-only remain positive",
-    "If the larger-history result remains positive, add window or walk-forward validation",
-    "Only after robustness checks consider a disabled-by-default paper module"
+    "Run SESSION_ORB_VWAP_V2_CANDLES=18000 npm run research:session-orb-vwap-v2-robustness",
+    "Review three chronological windows for the combined quality and ETH-only scenarios",
+    "Review fee sensitivity at 0.0004, 0.0006, 0.0008, and 0.0010",
+    "Only after window validation decide whether to test an ETH-only frozen candidate or reject the strategy",
+    "Do not modify Railway or paper loop"
   ]
 }
