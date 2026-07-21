@@ -589,3 +589,41 @@ Decision:
 - Do not enable WATCH, WAIT or EXPIRED.
 - Keep current Railway QORB parameters unchanged.
 - Revisit only with regime filtering, rolling walk-forward validation and a chronological portfolio simulation.
+
+
+---
+
+## 2026-07-21 — Session ORB VWAP v2 robustness failure
+
+Scope:
+- Research and paper only.
+- No real orders.
+- Railway and the active paper loop were not modified.
+
+Leading frozen scenario:
+- Scenario: eth_btc_reclaim_quality.
+- Bar: 5m.
+- Candles per symbol: 17999.
+- Trades: 25.
+- Gross PnL: +10.68 USDT.
+- Fees: 8.75 USDT.
+- Net PnL: +1.93 USDT.
+- Profit factor: 1.21.
+- Maximum drawdown: 3.75 USDT.
+
+Robustness findings:
+- Chronological windows positive: 2 of 3.
+- Middle window net PnL: -3.75 USDT.
+- Middle window profit factor: 0.
+- Result at fee rate 0.0010: -0.32 USDT.
+- ETH contribution: +3.80 USDT.
+- BTC contribution: -1.87 USDT.
+- Session-end exits: 15 trades, net -6.83 USDT.
+- No tested scenario passed the frozen-parameter robustness gate.
+
+Decision:
+- Reject Session ORB VWAP v2 deployment.
+- Do not integrate it into Railway or the paper loop.
+- Do not remove BTC post-hoc and claim an ETH-only success.
+- Do not optimize session-end exits or trading hours on the same sample.
+- Archive the research and select a structurally different intraday hypothesis.

@@ -558,3 +558,31 @@ Updated decision:
 - Do not enable WATCH, WAIT or EXPIRED.
 - Do not lower the current production threshold.
 - Previous positive profile results are retained as historical research, but they are superseded for deployment decisions by the failed chronological holdout.
+
+
+---
+
+### Session ORB VWAP v2 — robustness rejection, 2026-07-21
+
+Status: rejected research candidate, not paper-loop ready.
+
+The leading ETH/BTC reclaim scenario remained slightly positive on 17999 candles per symbol:
+
+- 25 trades.
+- Net PnL: +1.93 USDT.
+- Profit factor: 1.21.
+- Maximum drawdown: 3.75 USDT.
+
+The result failed robustness validation:
+
+- One of three chronological windows was clearly negative.
+- The strategy became negative at a slightly higher effective fee.
+- BTC reduced the combined result.
+- Session-end exits created substantial negative drag.
+- Alternative configurations were near break-even or negative.
+
+Decision:
+- Do not deploy Session ORB VWAP v2.
+- Do not tune the current parameters on the same sample.
+- Preserve the branch and memory as rejected research evidence.
+- Select a structurally different intraday model.
