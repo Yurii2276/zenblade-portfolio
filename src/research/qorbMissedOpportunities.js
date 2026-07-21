@@ -81,6 +81,18 @@ function pctChange(from, to) {
   return ((to - from) / from) * 100;
 }
 
+function shortReturnPct(entryPrice, exitPrice) {
+  if (
+    !Number.isFinite(entryPrice) ||
+    !Number.isFinite(exitPrice) ||
+    entryPrice <= 0
+  ) {
+    return 0;
+  }
+
+  return ((entryPrice - exitPrice) / entryPrice) * 100;
+}
+
 function getSymbols() {
   if (QORB_SYMBOLS.length > 0) return QORB_SYMBOLS;
 
@@ -127,7 +139,7 @@ function futureWindowStats({ candles, entryIndex, entryPrice, horizonsHours }) {
     out[`${hours}h`] = {
       maxDropPct: round(pctChange(entryPrice, minLow) * -1),
       maxBouncePct: round(pctChange(entryPrice, maxHigh)),
-      shortCloseReturnPct: round(pctChange(lastClose, entryPrice)),
+      shortCloseReturnPct: round(shortReturnPct(entryPrice, lastClose)),
       lastClose: round(lastClose, 8),
     };
   }
@@ -175,7 +187,7 @@ function simulateShortOutcome({ candles, entryIndex, entryPrice }) {
   }
 
   const last = candles[endIndex];
-  const grossPct = pctChange(last.close, entryPrice);
+  const grossPct = shortReturnPct(entryPrice, last.close);
 
   return {
     outcome: "TIME_EXIT",

@@ -30,6 +30,11 @@ const baseEnv = {
   MACRO_GOLD_DXY_XAUT_MIN_2D_PCT: "-999",
   MACRO_GOLD_DXY_MAX_ABS_DXY_CHANGE_2D_PCT: "999",
 
+  // This persistence test deliberately isolates the BUY/persistence path.
+  // Production freshness defaults remain unchanged.
+  MACRO_GOLD_DXY_MAX_DATE_GAP_DAYS: "999",
+  MACRO_GOLD_DXY_MAX_DATA_AGE_DAYS: "999",
+
   // Keep test small and fast.
   MACRO_GOLD_DXY_SYMBOLS: "BTC-USDT",
 };
