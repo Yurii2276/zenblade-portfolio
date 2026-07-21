@@ -534,3 +534,27 @@ Next possible research:
   - DXY down over 2 days;
   - XAUT up over 2 days.
 - Only if DXY + XAUT combination shows stronger edge, consider a future paper candidate.
+
+
+---
+
+### Research correction — QORB holdout failure, 2026-07-21
+
+The earlier positive QORB basket and parameter-sweep findings are not sufficient for deployment.
+
+After correcting short TIME_EXIT accounting, the recent score>=35 candidate remained strong on the recent window but failed an older chronological holdout:
+
+- Older holdout trades: 18.
+- Win rate: 38.9%.
+- Estimated net: -8.96 percentage points.
+- Estimated profit factor: 0.86.
+- Maximum drawdown: 46.37 percentage points.
+
+WATCH added no unique pump events; all eligible WATCH observations belonged to events already represented by READY.
+
+Updated decision:
+- QORB remains a research-only, rare event-driven strategy.
+- Do not deploy QORB v2.
+- Do not enable WATCH, WAIT or EXPIRED.
+- Do not lower the current production threshold.
+- Previous positive profile results are retained as historical research, but they are superseded for deployment decisions by the failed chronological holdout.

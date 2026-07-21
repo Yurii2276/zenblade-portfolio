@@ -548,3 +548,44 @@ Decision:
 - Macro Gold DXY remains not enabled in Railway.
 - Macro Gold DXY remains dry-run/paper only.
 - Do not use MACRO_GOLD_DXY_DRY_RUN=false in Railway.
+
+
+---
+
+## 2026-07-21 — QORB corrected audit and chronological holdout
+
+Scope:
+- Research and paper only.
+- No real orders.
+- Railway trading parameters were not changed.
+
+Corrections:
+- Fixed QORB short TIME_EXIT return to use entry price as the denominator.
+- Added explicit STRICT_LABEL and ANY_LABEL sweep modes.
+- Added per-symbol concentration statistics.
+- WATCH added zero unique pump events because every eligible WATCH record followed an event already represented by READY.
+
+Corrected recent-window result:
+- Baseline: READY/READY_LATE, score >= 35, changeSinceEvent -20..5.
+- Selected events: 31.
+- All selected events were READY.
+- Win rate: 77.4%.
+- Average gross: 6.21%.
+- Symbols: 9.
+- Maximum single-symbol share: 22.6%.
+
+Chronological holdout:
+- Cutoff: 2026-05-22T06:00:00.000Z.
+- Older holdout trades: 18.
+- Win rate after estimated costs: 38.9%.
+- Estimated net: -8.96 percentage points.
+- Estimated profit factor: 0.86.
+- Maximum drawdown: 46.37 percentage points.
+- Result: failed.
+
+Decision:
+- Reject QORB v2 deployment.
+- Do not lower the production score threshold.
+- Do not enable WATCH, WAIT or EXPIRED.
+- Keep current Railway QORB parameters unchanged.
+- Revisit only with regime filtering, rolling walk-forward validation and a chronological portfolio simulation.
