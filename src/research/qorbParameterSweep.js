@@ -24,6 +24,11 @@ const STATUS_SETS = {
   plus_watch_wait: ["READY", "READY_LATE", "WATCH", "WAIT"],
 };
 
+const LABEL_MODES = {
+  strict_label: "STRICT_LABEL",
+  any_label: "ANY_LABEL",
+};
+
 const SCORE_VALUES = (process.env.QORB_SWEEP_SCORES ?? "35,33,30,28")
   .split(",")
   .map((v) => Number.parseFloat(v.trim()))
@@ -72,7 +77,12 @@ function isEligible(record, config) {
 
   if ((record.score ?? -999) < config.minScore) return false;
 
-  if (record.strategyLabel === "WATCH_ONLY") return false;
+  if (
+    config.labelMode === "STRICT_LABEL" &&
+    record.strategyLabel === "WATCH_ONLY"
+  ) {
+    return false;
+  }
 
   const change = record.changeSinceEventPct;
   if (!Number.isFinite(change)) return false;
@@ -129,13 +139,54 @@ function analyze(records, config) {
       : 0;
 
   const byStatus = {};
+  const bySymbolRaw = {};
+
   for (const r of selected) {
     byStatus[r.status] ??= 0;
     byStatus[r.status] += 1;
+
+    const symbol = r.symbol ?? "UNKNOWN";
+
+    bySymbolRaw[symbol] ??= {
+      count: 0,
+      wins: 0,
+      losses: 0,
+      totalGrossPct: 0,
+    };
+
+    bySymbolRaw[symbol].count += 1;
+    bySymbolRaw[symbol].totalGrossPct += r.simulatedGrossPct ?? 0;
+
+    if ((r.simulatedGrossPct ?? 0) > 0) {
+      bySymbolRaw[symbol].wins += 1;
+    } else if ((r.simulatedGrossPct ?? 0) < 0) {
+      bySymbolRaw[symbol].losses += 1;
+    }
   }
+
+  const bySymbol = Object.fromEntries(
+    Object.entries(bySymbolRaw).map(([symbol, value]) => [
+      symbol,
+      {
+        count: value.count,
+        wins: value.wins,
+        losses: value.losses,
+        totalGrossPct: round(value.totalGrossPct, 2),
+        avgGrossPct: round(value.totalGrossPct / value.count, 2),
+        sharePct: count > 0 ? round((value.count / count) * 100, 1) : 0,
+      },
+    ])
+  );
+
+  const uniqueSymbols = Object.keys(bySymbol).length;
+  const maxSymbolSharePct =
+    count > 0
+      ? Math.max(...Object.values(bySymbol).map((value) => value.sharePct))
+      : 0;
 
   return {
     configName: config.name,
+    labelMode: config.labelMode,
     allowedStatuses: config.allowedStatuses.join("+"),
     minScore: config.minScore,
     changeLower: config.changeLower,
@@ -155,6 +206,9 @@ function analyze(records, config) {
     avgBounce24hPct: round(avgBounce24hPct, 2),
     avgDrop24hPct: round(avgDrop24hPct, 2),
     byStatus,
+    bySymbol,
+    uniqueSymbols,
+    maxSymbolSharePct,
     selectedExamples: selected.slice(0, 5).map((r) => ({
       symbol: r.symbol,
       signalTime: r.signalTime,
@@ -221,6 +275,7 @@ function writeReports(results, inputMeta) {
     "rank",
     "recommendation",
     "configName",
+    "labelMode",
     "allowedStatuses",
     "minScore",
     "changeLower",
@@ -238,7 +293,10 @@ function writeReports(results, inputMeta) {
     "avgGrossPct",
     "avgBounce24hPct",
     "avgDrop24hPct",
+    "uniqueSymbols",
+    "maxSymbolSharePct",
     "byStatus",
+    "bySymbol",
   ];
 
   const rows = [
@@ -303,16 +361,19 @@ function run() {
 
   const configs = [];
 
-  for (const [statusSetName, allowedStatuses] of Object.entries(STATUS_SETS)) {
-    for (const minScore of SCORE_VALUES) {
-      for (const changeLower of CHANGE_LOWER_VALUES) {
-        configs.push({
-          name: `${statusSetName}_score${minScore}_change${changeLower}`,
-          allowedStatuses,
-          minScore,
-          changeLower,
-          changeUpper: CHANGE_UPPER,
-        });
+  for (const [labelModeName, labelMode] of Object.entries(LABEL_MODES)) {
+    for (const [statusSetName, allowedStatuses] of Object.entries(STATUS_SETS)) {
+      for (const minScore of SCORE_VALUES) {
+        for (const changeLower of CHANGE_LOWER_VALUES) {
+          configs.push({
+            name: `${labelModeName}_${statusSetName}_score${minScore}_change${changeLower}`,
+            labelMode,
+            allowedStatuses,
+            minScore,
+            changeLower,
+            changeUpper: CHANGE_UPPER,
+          });
+        }
       }
     }
   }
