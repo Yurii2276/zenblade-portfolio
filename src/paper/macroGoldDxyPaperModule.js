@@ -5,7 +5,7 @@
  * - paper/dry-run only
  * - no real orders
  * - no private API keys
- * - not integrated into Railway paper loop
+ * - separate paper state; invoked by Railway paper loop
  *
  * Signal:
  * - DXY 2D change <= -0.3%
@@ -39,6 +39,14 @@ const GOLD_SYMBOL = process.env.MACRO_GOLD_DXY_GOLD_SYMBOL ?? "XAUT-USDT";
 const DXY_MAX_2D_PCT = Number.parseFloat(process.env.MACRO_GOLD_DXY_DXY_MAX_2D_PCT ?? "-0.3");
 const XAUT_MIN_2D_PCT = Number.parseFloat(process.env.MACRO_GOLD_DXY_XAUT_MIN_2D_PCT ?? "1.0");
 const MAX_ABS_DXY_CHANGE_2D_PCT = Number.parseFloat(process.env.MACRO_GOLD_DXY_MAX_ABS_DXY_CHANGE_2D_PCT ?? "5");
+
+const MAX_DATE_GAP_DAYS = Number.parseFloat(
+  process.env.MACRO_GOLD_DXY_MAX_DATE_GAP_DAYS ?? "1"
+);
+
+const MAX_DATA_AGE_DAYS = Number.parseFloat(
+  process.env.MACRO_GOLD_DXY_MAX_DATA_AGE_DAYS ?? "3"
+);
 
 const HOLD_HOURS = Number.parseFloat(process.env.MACRO_GOLD_DXY_HOLD_HOURS ?? "48");
 const SIGNAL_TTL_HOURS = Number.parseFloat(process.env.MACRO_GOLD_DXY_SIGNAL_TTL_HOURS ?? "48");
@@ -117,6 +125,34 @@ function roundPrice(value) {
 
 function dateKeyFromTime(time) {
   return new Date(time).toISOString().slice(0, 10);
+}
+
+function dateToUtcMs(date) {
+  if (!date) return null;
+
+  const parsed = Date.parse(`${date}T00:00:00Z`);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function dateGapDays(firstDate, secondDate) {
+  const first = dateToUtcMs(firstDate);
+  const second = dateToUtcMs(secondDate);
+
+  if (!Number.isFinite(first) || !Number.isFinite(second)) {
+    return null;
+  }
+
+  return Math.abs(first - second) / (24 * 60 * 60 * 1000);
+}
+
+function dateAgeDays(date) {
+  const time = dateToUtcMs(date);
+
+  if (!Number.isFinite(time)) {
+    return null;
+  }
+
+  return Math.max(0, (Date.now() - time) / (24 * 60 * 60 * 1000));
 }
 
 function pctChangeFromLast(candles, lookbackDays = 2) {
@@ -227,7 +263,25 @@ async function buildMacroSignal() {
   const dxyDate = dxyLast?.date ?? (dxyLast?.time ? dateKeyFromTime(dxyLast.time) : null);
   const xautDate = xautLast?.date ?? (xautLast?.time ? dateKeyFromTime(xautLast.time) : null);
 
+  const dateGap = dateGapDays(dxyDate, xautDate);
+  const dxyAgeDays = dateAgeDays(dxyDate);
+  const xautAgeDays = dateAgeDays(xautDate);
+
+  const dataDatesInvalid =
+    !dxyDate ||
+    !xautDate ||
+    !Number.isFinite(dateGap) ||
+    dateGap > MAX_DATE_GAP_DAYS ||
+    !Number.isFinite(dxyAgeDays) ||
+    !Number.isFinite(xautAgeDays) ||
+    dxyAgeDays > MAX_DATA_AGE_DAYS ||
+    xautAgeDays > MAX_DATA_AGE_DAYS;
+
   const reasons = [];
+
+  if (dataDatesInvalid) {
+    reasons.push("STALE_OR_MISALIGNED_DATA");
+  }
 
   if (!Number.isFinite(dxyChange2dPct)) {
     reasons.push("DXY_CHANGE_UNAVAILABLE");
@@ -260,10 +314,15 @@ async function buildMacroSignal() {
     xautClose: xautLast?.close ?? null,
     dxyChange2dPct: round(dxyChange2dPct),
     xautChange2dPct: round(xautChange2dPct),
+    dateGapDays: round(dateGap, 2),
+    dxyAgeDays: round(dxyAgeDays, 2),
+    xautAgeDays: round(xautAgeDays, 2),
     thresholds: {
       dxyMax2dPct: DXY_MAX_2D_PCT,
       xautMin2dPct: XAUT_MIN_2D_PCT,
       maxAbsDxyChange2dPct: MAX_ABS_DXY_CHANGE_2D_PCT,
+      maxDateGapDays: MAX_DATE_GAP_DAYS,
+      maxDataAgeDays: MAX_DATA_AGE_DAYS,
     },
     reason: pass
       ? `PASS | DXY ${round(dxyChange2dPct)}% <= ${DXY_MAX_2D_PCT}% and XAUT ${round(xautChange2dPct)}% >= ${XAUT_MIN_2D_PCT}%`
@@ -445,7 +504,7 @@ export async function runMacroGoldDxyPaperModuleOnce() {
 
   console.log("=== ZenBlade Macro Gold DXY Paper Module ===");
   console.log(`Mode: ${DRY_RUN ? "dry-run only — no state changes" : "paper only — separate state file"}`);
-  console.log("No real trading. No private API keys. Not integrated into Railway loop.");
+  console.log("No real trading. No private API keys. Separate paper state; invoked by Railway loop.");
   console.log(`Symbols: ${SYMBOLS.join(", ")}`);
   console.log(`Balance: ${state.balance} USDT`);
   console.log(`Open positions: ${state.openPositions.length}`);
