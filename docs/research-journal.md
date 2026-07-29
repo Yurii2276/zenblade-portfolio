@@ -627,3 +627,50 @@ Decision:
 - Do not remove BTC post-hoc and claim an ETH-only success.
 - Do not optimize session-end exits or trading hours on the same sample.
 - Archive the research and select a structurally different intraday hypothesis.
+
+---
+
+## 2026-07-29 — Cross-Asset Relative Strength 15m
+
+Command:
+- CROSS_RS_CANDLES=12000 npm run research:cross-rs-15m
+
+Scope:
+- Research only.
+- Symbols: BTC-USDT, ETH-USDT, SOL-USDT.
+- Bar: 15m.
+- Relative-strength lookbacks: 4h, 12h, 24h.
+- Forward horizons: 1h, 4h, 8h, 12h.
+- Cost assumption: 0.20% per leg, 0.40% for the pair.
+- No Railway integration.
+- No real orders.
+
+Data:
+- Requested candles per symbol: 12000.
+- Aligned candles: 11999.
+- Period: 2026-03-26 to 2026-07-29.
+
+Results:
+- 1h: 2975 observations, pair net -0.3960%, median -0.3943%, hit rate 6.55%.
+- 4h: 743 observations, pair net -0.3831%, median -0.4013%, hit rate 20.05%.
+- 8h: 371 observations, pair net -0.3404%, median -0.4016%, hit rate 28.30%.
+- 12h: 247 observations, pair net -0.2817%, median -0.3325%, hit rate 34.41%.
+
+Gross spread before assumed pair cost:
+- 1h: +0.0040%.
+- 4h: +0.0169%.
+- 8h: +0.0596%.
+- 12h: +0.1183%.
+
+Interpretation:
+- Relative strength contains a weak gross momentum effect.
+- The effect is substantially smaller than realistic two-leg costs.
+- Longer horizons reduce the loss but do not create a tradeable edge.
+- No horizon passed the cost, median, hit-rate or approximate t-stat gate.
+
+Decision:
+- Status: failed_cost_gate_do_not_integrate.
+- Do not add to Railway.
+- Do not add to the paper portfolio.
+- Do not lower the cost assumption or tune regimes on the same dataset.
+- Archive the current formulation and move to a structurally different hypothesis.

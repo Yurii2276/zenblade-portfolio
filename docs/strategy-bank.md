@@ -24,13 +24,13 @@ Portfolio Manager має:
 
 ## Candidate 1 — ETH Breakout Retest / Strong Trend Regime
 
-Status: research candidate  
-Symbol: ETH-USDT  
-Strategy: breakoutRetest  
-Best profile: aggressive  
-Market regime: strong clean uptrend  
-Real trading: no  
-Paper live: not yet  
+Status: research candidate
+Symbol: ETH-USDT
+Strategy: breakoutRetest
+Best profile: aggressive
+Market regime: strong clean uptrend
+Real trading: no
+Paper live: not yet
 
 ### Логіка
 
@@ -99,12 +99,12 @@ Paper live: not yet
 
 ## Candidate 2 — ETH Trend Pullback / Soft Trend Regime
 
-Status: research candidate  
-Symbol: ETH-USDT  
-Strategy: trendPullback  
-Market regime: soft uptrend + pullback  
-Real trading: no  
-Paper live: not yet  
+Status: research candidate
+Symbol: ETH-USDT
+Strategy: trendPullback
+Market regime: soft uptrend + pullback
+Real trading: no
+Paper live: not yet
 
 ### Найкращий stability result
 
@@ -167,10 +167,10 @@ Status: watch mode.
 
 ## Portfolio Research 1 — ETH Breakout + Pullback
 
-Status: promising research portfolio  
-Symbol: ETH-USDT  
-Real trading: no  
-Paper live: not yet  
+Status: promising research portfolio
+Symbol: ETH-USDT
+Real trading: no
+Paper live: not yet
 
 ### Portfolio logic
 
@@ -466,9 +466,9 @@ Rule:
 
 ## Candidate 4 — ZenBlade Gold Index Strategy
 
-Status: research completed, no standalone candidate yet.  
-Mode: research only.  
-Real trading: no.  
+Status: research completed, no standalone candidate yet.
+Mode: research only.
+Real trading: no.
 Paper live: no.
 
 ### Idea
@@ -586,3 +586,49 @@ Decision:
 - Do not tune the current parameters on the same sample.
 - Preserve the branch and memory as rejected research evidence.
 - Select a structurally different intraday model.
+
+---
+
+## Rejected — Cross-Asset Relative Strength 15m
+
+Status: failed cost gate, do not integrate.
+Mode: research only.
+Symbols: BTC-USDT, ETH-USDT, SOL-USDT.
+Bar: 15m.
+Paper live: no.
+Real trading: no.
+
+### Idea
+
+Rank BTC, ETH and SOL by relative performance over 4h, 12h and 24h. Test a market-neutral pair:
+
+- LONG the strongest asset;
+- SHORT the weakest asset;
+- hold for 1h, 4h, 8h or 12h.
+
+### Final 12000-candle result
+
+- Aligned candles: 11999.
+- Period: 2026-03-26 to 2026-07-29.
+- Assumed pair cost: 0.40%.
+
+Net pair result:
+- 1h: -0.3960%.
+- 4h: -0.3831%.
+- 8h: -0.3404%.
+- 12h: -0.2817%.
+
+Best gross spread:
+- 12h: +0.1183%.
+
+### Conclusion
+
+The ranking has a weak gross momentum effect, but it is too small to cover realistic two-leg costs. No tested horizon produced a positive net average, positive median or hit rate above 50%.
+
+### Decision
+
+- Reject the current formulation.
+- Do not integrate into Railway or the paper portfolio.
+- Do not reduce assumed costs to manufacture a positive result.
+- Do not optimize lookbacks, symbols or regimes on the same sample.
+- Keep the script and report only as archived research evidence.
