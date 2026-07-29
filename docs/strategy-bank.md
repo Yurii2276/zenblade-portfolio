@@ -586,3 +586,49 @@ Decision:
 - Do not tune the current parameters on the same sample.
 - Preserve the branch and memory as rejected research evidence.
 - Select a structurally different intraday model.
+
+---
+
+## Rejected — Cross-Asset Relative Strength 15m
+
+Status: failed cost gate, do not integrate.  
+Mode: research only.  
+Symbols: BTC-USDT, ETH-USDT, SOL-USDT.  
+Bar: 15m.  
+Paper live: no.  
+Real trading: no.
+
+### Idea
+
+Rank BTC, ETH and SOL by relative performance over 4h, 12h and 24h. Test a market-neutral pair:
+
+- LONG the strongest asset;
+- SHORT the weakest asset;
+- hold for 1h, 4h, 8h or 12h.
+
+### Final 12000-candle result
+
+- Aligned candles: 11999.
+- Period: 2026-03-26 to 2026-07-29.
+- Assumed pair cost: 0.40%.
+
+Net pair result:
+- 1h: -0.3960%.
+- 4h: -0.3831%.
+- 8h: -0.3404%.
+- 12h: -0.2817%.
+
+Best gross spread:
+- 12h: +0.1183%.
+
+### Conclusion
+
+The ranking has a weak gross momentum effect, but it is too small to cover realistic two-leg costs. No tested horizon produced a positive net average, positive median or hit rate above 50%.
+
+### Decision
+
+- Reject the current formulation.
+- Do not integrate into Railway or the paper portfolio.
+- Do not reduce assumed costs to manufacture a positive result.
+- Do not optimize lookbacks, symbols or regimes on the same sample.
+- Keep the script and report only as archived research evidence.

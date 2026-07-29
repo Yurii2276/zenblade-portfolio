@@ -1,0 +1,108 @@
+{
+  "strategyId": "cross-asset-relative-strength-15m",
+  "strategyName": "ZenBlade Cross-Asset Relative Strength 15m",
+  "mode": "research only",
+  "status": "failed_cost_gate_do_not_integrate",
+  "lastUpdated": "2026-07-29",
+  "currentObservation": {
+    "implemented": false,
+    "paperLoopEnabled": false,
+    "railwayEnabled": false,
+    "researchScript": "src/research/crossAssetRelativeStrength15m.js",
+    "npmScript": "research:cross-rs-15m",
+    "symbols": [
+      "BTC-USDT",
+      "ETH-USDT",
+      "SOL-USDT"
+    ],
+    "bar": "15m",
+    "requestedCandlesPerSymbol": 12000,
+    "alignedCandles": 11999,
+    "periodStart": "2026-03-26T12:45:00.000Z",
+    "periodEnd": "2026-07-29T12:15:00.000Z",
+    "costPerLegPct": 0.2,
+    "pairCostPct": 0.4
+  },
+  "lastDecision": "Reject the current Cross-Asset Relative Strength 15m formulation. The relative-strength ranking produced only a very small positive gross spread, which was substantially below the assumed two-leg execution cost at every tested horizon. Do not integrate into Railway or the paper loop.",
+  "result12000": {
+    "1h": {
+      "observations": 2975,
+      "longStrongAvgNetPct": -0.1983,
+      "shortWeakAvgNetPct": -0.1977,
+      "pairGrossPct": 0.004,
+      "pairAvgNetPct": -0.396,
+      "pairMedianNetPct": -0.3943,
+      "pairHitRatePct": 6.55,
+      "pairTStatApprox": -68.974
+    },
+    "4h": {
+      "observations": 743,
+      "longStrongAvgNetPct": -0.1929,
+      "shortWeakAvgNetPct": -0.1902,
+      "pairGrossPct": 0.0169,
+      "pairAvgNetPct": -0.3831,
+      "pairMedianNetPct": -0.4013,
+      "pairHitRatePct": 20.05,
+      "pairTStatApprox": -16.232
+    },
+    "8h": {
+      "observations": 371,
+      "longStrongAvgNetPct": -0.1785,
+      "shortWeakAvgNetPct": -0.1619,
+      "pairGrossPct": 0.0596,
+      "pairAvgNetPct": -0.3404,
+      "pairMedianNetPct": -0.4016,
+      "pairHitRatePct": 28.3,
+      "pairTStatApprox": -7.645
+    },
+    "12h": {
+      "observations": 247,
+      "longStrongAvgNetPct": -0.141,
+      "shortWeakAvgNetPct": -0.1407,
+      "pairGrossPct": 0.1183,
+      "pairAvgNetPct": -0.2817,
+      "pairMedianNetPct": -0.3325,
+      "pairHitRatePct": 34.41,
+      "pairTStatApprox": -4.206
+    }
+  },
+  "interpretation": [
+    "The relative-strength ranking contains a weak positive gross spread, but the spread is far smaller than realistic two-leg costs.",
+    "The best tested horizon was 12h, with only +0.1183% average gross spread against 0.4% assumed pair cost.",
+    "Both the long-strongest and short-weakest legs remained negative after their individual cost allowance.",
+    "All net medians were negative.",
+    "Hit rate remained below 50% at every horizon.",
+    "Longer holding periods reduced the loss but did not create a tradeable edge.",
+    "The 3000, 6000 and 12000 runs are nested samples and should not be treated as three independent validations."
+  ],
+  "knownProblems": [
+    "Gross edge is too small relative to fees and execution costs",
+    "All tested horizons are negative after costs",
+    "All tested net medians are negative",
+    "Hit rate is below 50% at all horizons",
+    "Two-leg construction doubles execution drag",
+    "Further regime or threshold tuning on the same sample would create overfitting risk"
+  ],
+  "blockedChanges": [
+    "Do not add this strategy to Railway",
+    "Do not add this strategy to the paper portfolio loop",
+    "Do not enable real trading or real orders",
+    "Do not use private exchange API keys",
+    "Do not lower assumed costs merely to make the result positive",
+    "Do not reverse the strategy solely because the net result is negative",
+    "Do not optimize lookbacks or regimes on the same March-July 2026 sample",
+    "Do not expand the universe to illiquid altcoins"
+  ],
+  "nextResearch": [
+    "Archive the current formulation as a failed cost-gate candidate",
+    "Keep the report as evidence of the completed test",
+    "Return to the strategy bank and choose a structurally different hypothesis",
+    "Prefer event-driven or slower regime strategies with larger expected movement relative to costs",
+    "Do not modify Railway or the current paper loop"
+  ],
+  "archiveLocation": {
+    "sourceBranch": "research/cross-asset-relative-strength-15m",
+    "report": "reports/cross-asset-relative-strength-15m.json",
+    "note": "The research script and generated report remain on the archive branch. Only final memory and documentation should be promoted to main."
+  }
+}
