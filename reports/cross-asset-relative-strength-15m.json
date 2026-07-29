@@ -1,0 +1,168 @@
+{
+  "generatedAt": "2026-07-29T12:36:25.702Z",
+  "mode": "research only — no paper-loop integration",
+  "config": {
+    "symbols": [
+      "BTC-USDT",
+      "ETH-USDT",
+      "SOL-USDT"
+    ],
+    "bar": "15m",
+    "targetCandles": 12000,
+    "alignedCandles": 11999,
+    "costPerLegPct": 0.2,
+    "lookbacks": [
+      16,
+      48,
+      96
+    ],
+    "horizons": {
+      "1h": 4,
+      "4h": 16,
+      "8h": 32,
+      "12h": 48
+    }
+  },
+  "results": {
+    "1h": {
+      "all": {
+        "observations": 2975,
+        "strongestAvgFuturePct": 0.0017,
+        "weakestAvgFuturePct": -0.0023,
+        "longStrongAvgNetPct": -0.1983,
+        "shortWeakAvgNetPct": -0.1977,
+        "pairAvgNetPct": -0.396,
+        "pairMedianNetPct": -0.3943,
+        "pairHitRatePct": 6.55,
+        "pairTStatApprox": -68.974
+      },
+      "riskOn": {
+        "observations": 1556,
+        "strongestAvgFuturePct": 0.0091,
+        "weakestAvgFuturePct": -0.0035,
+        "longStrongAvgNetPct": -0.1909,
+        "shortWeakAvgNetPct": -0.1965,
+        "pairAvgNetPct": -0.3874,
+        "pairMedianNetPct": -0.3896,
+        "pairHitRatePct": 6.94,
+        "pairTStatApprox": -47.844
+      },
+      "riskOff": {
+        "observations": 1419,
+        "strongestAvgFuturePct": -0.0064,
+        "weakestAvgFuturePct": -0.001,
+        "longStrongAvgNetPct": -0.2064,
+        "shortWeakAvgNetPct": -0.199,
+        "pairAvgNetPct": -0.4055,
+        "pairMedianNetPct": -0.4006,
+        "pairHitRatePct": 6.13,
+        "pairTStatApprox": -49.911
+      }
+    },
+    "4h": {
+      "all": {
+        "observations": 743,
+        "strongestAvgFuturePct": 0.0071,
+        "weakestAvgFuturePct": -0.0098,
+        "longStrongAvgNetPct": -0.1929,
+        "shortWeakAvgNetPct": -0.1902,
+        "pairAvgNetPct": -0.3831,
+        "pairMedianNetPct": -0.4013,
+        "pairHitRatePct": 20.05,
+        "pairTStatApprox": -16.232
+      },
+      "riskOn": {
+        "observations": 388,
+        "strongestAvgFuturePct": -0.0245,
+        "weakestAvgFuturePct": -0.0616,
+        "longStrongAvgNetPct": -0.2245,
+        "shortWeakAvgNetPct": -0.1384,
+        "pairAvgNetPct": -0.3629,
+        "pairMedianNetPct": -0.3844,
+        "pairHitRatePct": 21.91,
+        "pairTStatApprox": -11.211
+      },
+      "riskOff": {
+        "observations": 355,
+        "strongestAvgFuturePct": 0.0416,
+        "weakestAvgFuturePct": 0.0468,
+        "longStrongAvgNetPct": -0.1584,
+        "shortWeakAvgNetPct": -0.2468,
+        "pairAvgNetPct": -0.4053,
+        "pairMedianNetPct": -0.4349,
+        "pairHitRatePct": 18.03,
+        "pairTStatApprox": -11.75
+      }
+    },
+    "8h": {
+      "all": {
+        "observations": 371,
+        "strongestAvgFuturePct": 0.0215,
+        "weakestAvgFuturePct": -0.0381,
+        "longStrongAvgNetPct": -0.1785,
+        "shortWeakAvgNetPct": -0.1619,
+        "pairAvgNetPct": -0.3404,
+        "pairMedianNetPct": -0.4016,
+        "pairHitRatePct": 28.3,
+        "pairTStatApprox": -7.645
+      },
+      "riskOn": {
+        "observations": 197,
+        "strongestAvgFuturePct": 0.0205,
+        "weakestAvgFuturePct": -0.0475,
+        "longStrongAvgNetPct": -0.1795,
+        "shortWeakAvgNetPct": -0.1525,
+        "pairAvgNetPct": -0.332,
+        "pairMedianNetPct": -0.3807,
+        "pairHitRatePct": 30.46,
+        "pairTStatApprox": -5.745
+      },
+      "riskOff": {
+        "observations": 174,
+        "strongestAvgFuturePct": 0.0227,
+        "weakestAvgFuturePct": -0.0274,
+        "longStrongAvgNetPct": -0.1773,
+        "shortWeakAvgNetPct": -0.1726,
+        "pairAvgNetPct": -0.3499,
+        "pairMedianNetPct": -0.4252,
+        "pairHitRatePct": 25.86,
+        "pairTStatApprox": -5.074
+      }
+    },
+    "12h": {
+      "all": {
+        "observations": 247,
+        "strongestAvgFuturePct": 0.059,
+        "weakestAvgFuturePct": -0.0593,
+        "longStrongAvgNetPct": -0.141,
+        "shortWeakAvgNetPct": -0.1407,
+        "pairAvgNetPct": -0.2817,
+        "pairMedianNetPct": -0.3325,
+        "pairHitRatePct": 34.41,
+        "pairTStatApprox": -4.206
+      },
+      "riskOn": {
+        "observations": 120,
+        "strongestAvgFuturePct": 0.0388,
+        "weakestAvgFuturePct": -0.0835,
+        "longStrongAvgNetPct": -0.1612,
+        "shortWeakAvgNetPct": -0.1165,
+        "pairAvgNetPct": -0.2777,
+        "pairMedianNetPct": -0.3254,
+        "pairHitRatePct": 33.33,
+        "pairTStatApprox": -2.722
+      },
+      "riskOff": {
+        "observations": 127,
+        "strongestAvgFuturePct": 0.078,
+        "weakestAvgFuturePct": -0.0365,
+        "longStrongAvgNetPct": -0.122,
+        "shortWeakAvgNetPct": -0.1635,
+        "pairAvgNetPct": -0.2855,
+        "pairMedianNetPct": -0.336,
+        "pairHitRatePct": 35.43,
+        "pairTStatApprox": -3.244
+      }
+    }
+  }
+}

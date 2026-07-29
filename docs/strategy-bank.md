@@ -24,13 +24,13 @@ Portfolio Manager має:
 
 ## Candidate 1 — ETH Breakout Retest / Strong Trend Regime
 
-Status: research candidate  
-Symbol: ETH-USDT  
-Strategy: breakoutRetest  
-Best profile: aggressive  
-Market regime: strong clean uptrend  
-Real trading: no  
-Paper live: not yet  
+Status: research candidate
+Symbol: ETH-USDT
+Strategy: breakoutRetest
+Best profile: aggressive
+Market regime: strong clean uptrend
+Real trading: no
+Paper live: not yet
 
 ### Логіка
 
@@ -99,12 +99,12 @@ Paper live: not yet
 
 ## Candidate 2 — ETH Trend Pullback / Soft Trend Regime
 
-Status: research candidate  
-Symbol: ETH-USDT  
-Strategy: trendPullback  
-Market regime: soft uptrend + pullback  
-Real trading: no  
-Paper live: not yet  
+Status: research candidate
+Symbol: ETH-USDT
+Strategy: trendPullback
+Market regime: soft uptrend + pullback
+Real trading: no
+Paper live: not yet
 
 ### Найкращий stability result
 
@@ -167,10 +167,10 @@ Status: watch mode.
 
 ## Portfolio Research 1 — ETH Breakout + Pullback
 
-Status: promising research portfolio  
-Symbol: ETH-USDT  
-Real trading: no  
-Paper live: not yet  
+Status: promising research portfolio
+Symbol: ETH-USDT
+Real trading: no
+Paper live: not yet
 
 ### Portfolio logic
 
@@ -466,9 +466,9 @@ Rule:
 
 ## Candidate 4 — ZenBlade Gold Index Strategy
 
-Status: research completed, no standalone candidate yet.  
-Mode: research only.  
-Real trading: no.  
+Status: research completed, no standalone candidate yet.
+Mode: research only.
+Real trading: no.
 Paper live: no.
 
 ### Idea
@@ -591,11 +591,11 @@ Decision:
 
 ## Rejected — Cross-Asset Relative Strength 15m
 
-Status: failed cost gate, do not integrate.  
-Mode: research only.  
-Symbols: BTC-USDT, ETH-USDT, SOL-USDT.  
-Bar: 15m.  
-Paper live: no.  
+Status: failed cost gate, do not integrate.
+Mode: research only.
+Symbols: BTC-USDT, ETH-USDT, SOL-USDT.
+Bar: 15m.
+Paper live: no.
 Real trading: no.
 
 ### Idea
