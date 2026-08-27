@@ -88,16 +88,16 @@ function refreshDay(state) {
 }
 
 export function calculatePaperRiskState(state, approvals) {
-  const policies = approvals.map((approval) => approval.riskPolicy ?? {});
-  const maxDailyLossPct = Math.min(
-    ...policies.map((policy) => Number(policy.maxDailyLossPct ?? 1))
-  );
-  const maxPaperDrawdownPct = Math.min(
-    ...policies.map((policy) => Number(policy.maxPaperDrawdownPct ?? 5))
-  );
-  const maxTotalOpenPositions = Math.min(
-    ...policies.map((policy) => Number(policy.maxTotalOpenPositions ?? 3))
-  );
+  const policies = (approvals ?? []).map((approval) => approval.riskPolicy ?? {});
+  const maxDailyLossPct = policies.length
+    ? Math.min(...policies.map((policy) => Number(policy.maxDailyLossPct ?? 1)))
+    : 1;
+  const maxPaperDrawdownPct = policies.length
+    ? Math.min(...policies.map((policy) => Number(policy.maxPaperDrawdownPct ?? 5)))
+    : 5;
+  const maxTotalOpenPositions = policies.length
+    ? Math.min(...policies.map((policy) => Number(policy.maxTotalOpenPositions ?? 3)))
+    : 0;
 
   const dayLossPct = state.dayStartBalance > 0
     ? ((state.dayStartBalance - state.balance) / state.dayStartBalance) * 100
@@ -237,6 +237,20 @@ async function loadApprovalMarketData(approval) {
   return { candles, htfCandles };
 }
 
+function marketDescriptorForPosition(position, approval) {
+  if (approval) return approval;
+  return {
+    approvalId: position.approvalId,
+    symbol: position.symbol,
+    timeframe: position.timeframe ?? baseConfig.bar,
+    strategyId: position.strategyId,
+    strategyParameters: { useHtfFilter: false },
+    riskPolicy: {},
+    mode: "paper",
+    liveTradingAllowed: false,
+  };
+}
+
 function buildSignalConfig(approval) {
   const riskPolicy = approval.riskPolicy ?? {};
   return {
@@ -269,6 +283,7 @@ export async function runAutonomousPaperOnce(options = {}) {
   const stateFile = options.stateFile ?? STATE_PATH;
   const tradesFile = options.tradesFile ?? TRADES_PATH;
   const marketLoader = options.marketLoader ?? loadApprovalMarketData;
+  const signalGetter = options.signalGetter ?? getSignal;
   const initialBalance = baseConfig.initialBalance ?? 1000;
   const state = readJson(stateFile, createInitialPaperState(initialBalance));
   const trades = readJson(tradesFile, []);
@@ -281,21 +296,18 @@ export async function runAutonomousPaperOnce(options = {}) {
   state.peakBalance = Math.max(Number(state.peakBalance ?? 0), state.balance);
 
   const marketCache = new Map();
-  const getMarket = async (approval) => {
-    const key = `${approval.symbol}:${approval.timeframe}`;
-    if (!marketCache.has(key)) marketCache.set(key, await marketLoader(approval));
+  const getMarket = async (descriptor) => {
+    const key = `${descriptor.symbol}:${descriptor.timeframe}`;
+    if (!marketCache.has(key)) marketCache.set(key, await marketLoader(descriptor));
     return marketCache.get(key);
   };
 
-  // Close existing paper positions before considering new entries.
+  // Close existing paper positions even if a later manifest no longer contains them.
   const stillOpen = [];
   for (const position of state.openPositions) {
     const approval = approvals.find((item) => item.approvalId === position.approvalId);
-    if (!approval) {
-      stillOpen.push(position);
-      continue;
-    }
-    const { candles } = await getMarket(approval);
+    const descriptor = marketDescriptorForPosition(position, approval);
+    const { candles } = await getMarket(descriptor);
     const lastCandle = candles.at(-1);
     const exit = evaluatePositionExit(position, lastCandle);
     if (!exit) {
@@ -339,7 +351,7 @@ export async function runAutonomousPaperOnce(options = {}) {
 
     state.lastProcessedCandleByApproval[approval.approvalId] = lastCandle.time;
 
-    const signal = getSignal({
+    const signal = signalGetter({
       candles,
       htfCandles,
       config: buildSignalConfig(approval),
