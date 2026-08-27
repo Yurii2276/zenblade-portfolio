@@ -95,6 +95,26 @@ const drawdownState = {
 const ddRisk = calculatePaperRiskState(drawdownState, [approval]);
 assert.equal(ddRisk.pausedReason, "paper_drawdown_limit");
 
+const emptyRisk = calculatePaperRiskState(createInitialPaperState(1000), []);
+assert.equal(emptyRisk.maxTotalOpenPositions, 0);
+assert.equal(emptyRisk.pausedReason, null);
+
+function candlesWithLast(last) {
+  const start = last.time - 119 * 300_000;
+  return Array.from({ length: 120 }, (_, index) => {
+    const time = start + index * 300_000;
+    if (index === 119) return last;
+    return {
+      time,
+      open: 99,
+      high: 101,
+      low: 98,
+      close: 100,
+      volume: 1000,
+    };
+  });
+}
+
 const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "auto-paper-"));
 try {
   const stateFile = path.join(tempDir, "state.json");
@@ -107,17 +127,79 @@ try {
     approvals: [],
   };
 
-  const result = await runAutonomousPaperOnce({
+  const emptyResult = await runAutonomousPaperOnce({
     manifest: emptyManifest,
     stateFile,
     tradesFile,
   });
-  assert.equal(result.approvals, 0);
-  assert.equal(result.state.liveTradingAllowed, false);
-  assert.equal(result.state.mode, "paper-only");
-  assert.equal(result.trades.length, 0);
+  assert.equal(emptyResult.approvals, 0);
+  assert.equal(emptyResult.state.liveTradingAllowed, false);
+  assert.equal(emptyResult.state.mode, "paper-only");
+  assert.equal(emptyResult.trades.length, 0);
   assert.equal(fs.existsSync(stateFile), true);
   assert.equal(fs.existsSync(tradesFile), true);
+
+  fs.rmSync(stateFile, { force: true });
+  fs.rmSync(tradesFile, { force: true });
+
+  const manifest = {
+    schemaVersion: 1,
+    generatedAt: new Date().toISOString(),
+    mode: "paper-only",
+    liveTradingAllowed: false,
+    approvals: [approval],
+  };
+  let phase = 1;
+  const firstTime = Date.now();
+  const marketLoader = async () => {
+    if (phase === 1) {
+      return {
+        candles: candlesWithLast({
+          time: firstTime,
+          open: 99,
+          high: 101,
+          low: 98,
+          close: 100,
+          volume: 1200,
+        }),
+        htfCandles: null,
+      };
+    }
+    return {
+      candles: candlesWithLast({
+        time: firstTime + 300_000,
+        open: 100,
+        high: 105,
+        low: 99.5,
+        close: 104,
+        volume: 1200,
+      }),
+      htfCandles: null,
+    };
+  };
+
+  const firstRun = await runAutonomousPaperOnce({
+    manifest,
+    stateFile,
+    tradesFile,
+    marketLoader,
+    signalGetter: () => signal,
+  });
+  assert.equal(firstRun.state.openPositions.length, 1);
+  assert.equal(firstRun.trades.length, 0);
+
+  phase = 2;
+  const secondRun = await runAutonomousPaperOnce({
+    manifest,
+    stateFile,
+    tradesFile,
+    marketLoader,
+    signalGetter: () => ({ action: "HOLD", indicators: null, reason: "test" }),
+  });
+  assert.equal(secondRun.state.openPositions.length, 0);
+  assert.equal(secondRun.trades.length, 1);
+  assert.equal(secondRun.trades[0].closeReason, "TAKE_PROFIT");
+  assert.ok(secondRun.state.balance > 1000);
 } finally {
   fs.rmSync(tempDir, { recursive: true, force: true });
 }
