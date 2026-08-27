@@ -46,7 +46,8 @@
     "brain:report": "node src/brain/report.js",
     "test:brain": "node src/brain/testExperimentStore.js && node src/brain/testBotLogImport.js",
     "lab:run": "node src/lab/strategyLab.js",
-    "test:lab": "node src/lab/testStrategyLab.js"
+    "lab:walk-forward": "node src/lab/walkForwardLab.js",
+    "test:lab": "node src/lab/testStrategyLab.js && node src/lab/testWalkForwardValidator.js"
   },
   "main": "src/index.js",
   "license": "MIT"
