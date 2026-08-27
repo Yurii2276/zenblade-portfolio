@@ -25,6 +25,13 @@ try {
   assert.equal(result.experiment.metrics.realizedPnlUSDT, -45.4938);
   assert.equal(result.experiment.metrics.closedTrades, 13);
   assert.equal(fs.existsSync(brainFile), true);
+
+  const unrelatedFile = path.join(tempDir, "water-news.json");
+  fs.writeFileSync(unrelatedFile, JSON.stringify([{ message: "Water News intelligent editor started" }]), "utf8");
+  const unrelated = importBotLog(unrelatedFile, { filePath: brainFile });
+  assert.equal(unrelated.created, false);
+  assert.equal(unrelated.reason, "unsupported_non_trading_log");
+
   console.log("Brain bot log import test passed.");
 } finally {
   fs.rmSync(tempDir, { recursive: true, force: true });
