@@ -1,5 +1,12 @@
 import path from "node:path";
 
+if (!process.env.ZENBLADE_DATA_DIR && process.env.RAILWAY_VOLUME_MOUNT_PATH) {
+  process.env.ZENBLADE_DATA_DIR = path.join(
+    process.env.RAILWAY_VOLUME_MOUNT_PATH,
+    "zenblade"
+  );
+}
+
 function resolvePath(value, fallback) {
   return path.resolve(value || fallback);
 }
@@ -7,9 +14,6 @@ function resolvePath(value, fallback) {
 function defaultDataDir() {
   if (process.env.ZENBLADE_DATA_DIR) {
     return process.env.ZENBLADE_DATA_DIR;
-  }
-  if (process.env.RAILWAY_VOLUME_MOUNT_PATH) {
-    return path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, "zenblade");
   }
   return "data";
 }
