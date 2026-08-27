@@ -44,7 +44,9 @@
     "brain:seed": "npm run brain:seed:research && npm run brain:seed:history",
     "brain:import-logs": "node src/brain/importBotLogs.js",
     "brain:report": "node src/brain/report.js",
-    "test:brain": "node src/brain/testExperimentStore.js && node src/brain/testBotLogImport.js"
+    "test:brain": "node src/brain/testExperimentStore.js && node src/brain/testBotLogImport.js",
+    "lab:run": "node src/lab/strategyLab.js",
+    "test:lab": "node src/lab/testStrategyLab.js"
   },
   "main": "src/index.js",
   "license": "MIT"
