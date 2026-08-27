@@ -6,6 +6,7 @@ import { importBotLog } from "./importBotLogs.js";
 
 const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "brain-log-"));
 const sourceFile = path.join(tempDir, "qorb.json");
+const brainFile = path.join(tempDir, "brain", "experiments.ndjson");
 
 const records = [
   { message: "QORB PAPER REVERSAL BOT V1", timestamp: "2026-08-26T00:00:00Z" },
@@ -18,11 +19,12 @@ const records = [
 
 try {
   fs.writeFileSync(sourceFile, JSON.stringify(records), "utf8");
-  const result = importBotLog(sourceFile);
+  const result = importBotLog(sourceFile, { filePath: brainFile });
   assert.equal(result.created, true);
   assert.equal(result.experiment.strategyId, "qorb-paper-reversal");
   assert.equal(result.experiment.metrics.realizedPnlUSDT, -45.4938);
   assert.equal(result.experiment.metrics.closedTrades, 13);
+  assert.equal(fs.existsSync(brainFile), true);
   console.log("Brain bot log import test passed.");
 } finally {
   fs.rmSync(tempDir, { recursive: true, force: true });
