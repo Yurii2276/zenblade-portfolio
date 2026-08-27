@@ -104,13 +104,18 @@ function stableKey(strategyName, parameters) {
   return `${strategyName}|${entries.map(([key, value]) => `${key}=${value}`).join("|")}`;
 }
 
+function defaultResearchSeed() {
+  return process.env.LAB_SEED || `strategy-lab-v1:${new Date().toISOString().slice(0, 10)}`;
+}
+
 export function generateCandidates({
   strategies = LONG_STRATEGIES,
   candidatesPerStrategy = 20,
-  seed = "strategy-lab-v1",
+  seed = defaultResearchSeed(),
 } = {}) {
   const candidates = [];
   const seen = new Set();
+  const seedTag = hashSeed(seed).toString(16).padStart(8, "0").slice(0, 6);
 
   for (const strategyName of strategies) {
     if (!LONG_STRATEGIES.includes(strategyName)) {
@@ -132,8 +137,9 @@ export function generateCandidates({
       createdForStrategy += 1;
 
       candidates.push({
-        candidateId: `${strategyName}-${String(createdForStrategy).padStart(4, "0")}`,
+        candidateId: `${strategyName}-${seedTag}-${String(createdForStrategy).padStart(4, "0")}`,
         strategyName,
+        researchSeed: seed,
         parameters,
       });
     }
