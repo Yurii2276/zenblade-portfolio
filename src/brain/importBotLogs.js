@@ -14,7 +14,7 @@ function detectBot(messages) {
   if (joined.includes("QORB PAPER REVERSAL BOT")) return "qorb-paper-reversal";
   if (joined.includes("QORB LIVE MACRO BOT")) return "qorb-live-macro";
   if (joined.includes("QORB DIP LIVE")) return "qorb-dip-live";
-  return "legacy-bot";
+  return null;
 }
 
 function lastNumeric(messages, pattern) {
@@ -32,6 +32,8 @@ function countMatches(messages, pattern) {
 function summarizeLog(records, fileName) {
   const messages = records.map((item) => String(item?.message ?? ""));
   const botId = detectBot(messages);
+  if (!botId) return null;
+
   const timestamps = records
     .map((item) => item?.timestamp)
     .filter(Boolean)
@@ -88,7 +90,12 @@ export function importBotLog(filePath, options = {}) {
     throw new Error(`Expected JSON array in ${filePath}`);
   }
 
-  return appendExperiment(summarizeLog(raw, path.basename(filePath)), options);
+  const summary = summarizeLog(raw, path.basename(filePath));
+  if (!summary) {
+    return { created: false, skipped: true, reason: "unsupported_non_trading_log", experiment: null };
+  }
+
+  return appendExperiment(summary, options);
 }
 
 export function importBotLogs(filePaths, options = {}) {
@@ -111,7 +118,8 @@ if (isDirectRun) {
       const results = importBotLogs(filePaths);
       console.log("=== Autonomous Brain v1: bot log import ===");
       for (const result of results) {
-        console.log(`${result.created ? "IMPORTED" : "SKIPPED"}: ${result.filePath} -> ${result.experiment.strategyId}`);
+        const target = result.experiment?.strategyId ?? result.reason ?? "unknown";
+        console.log(`${result.created ? "IMPORTED" : "SKIPPED"}: ${result.filePath} -> ${target}`);
       }
       console.log("No trading actions were executed.");
     } catch (error) {
