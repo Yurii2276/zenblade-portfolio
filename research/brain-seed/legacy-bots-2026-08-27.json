@@ -1,0 +1,91 @@
+[
+  {
+    "strategyId": "qorb-dip-live",
+    "strategyName": "QORB DIP LIVE v7",
+    "experimentType": "legacy_bot_log",
+    "stage": "paper",
+    "status": "historical_observation",
+    "source": "legacy-log:logs.1787831553421.json",
+    "parameters": {
+      "firstTimestamp": "2026-08-20T16:13:15.857190832Z",
+      "lastTimestamp": "2026-08-27T10:13:13.457032671Z"
+    },
+    "metrics": {
+      "records": 364,
+      "startingBalanceUSDT": null,
+      "currentBalanceUSDT": null,
+      "realizedPnlUSDT": null,
+      "closedTrades": null,
+      "openPositions": null,
+      "waitCount": 24,
+      "noSignalCount": 0,
+      "fatalErrorCount": 4,
+      "skippedInstrumentCount": 0
+    },
+    "decision": "Use as historical evidence only; do not promote to live trading from log data alone.",
+    "notes": [
+      "inactive decisions observed: WAIT=24, NO_SIGNAL=0",
+      "data/runtime issues observed: fatal=4, skipped instruments=0"
+    ],
+    "tags": ["legacy", "log-import", "paper"]
+  },
+  {
+    "strategyId": "qorb-live-macro",
+    "strategyName": "QORB LIVE MACRO BOT v6",
+    "experimentType": "legacy_bot_log",
+    "stage": "paper",
+    "status": "historical_observation",
+    "source": "legacy-log:logs.1787831590857.json",
+    "parameters": {
+      "firstTimestamp": "2026-08-25T14:20:10.501671564Z",
+      "lastTimestamp": "2026-08-27T11:20:15.030892565Z"
+    },
+    "metrics": {
+      "records": 1000,
+      "startingBalanceUSDT": null,
+      "currentBalanceUSDT": null,
+      "realizedPnlUSDT": null,
+      "closedTrades": null,
+      "openPositions": null,
+      "waitCount": 45,
+      "noSignalCount": 37,
+      "fatalErrorCount": 0,
+      "skippedInstrumentCount": 0
+    },
+    "decision": "Use as historical evidence only; do not promote to live trading from log data alone.",
+    "notes": [
+      "inactive decisions observed: WAIT=45, NO_SIGNAL=37"
+    ],
+    "tags": ["legacy", "log-import", "paper"]
+  },
+  {
+    "strategyId": "qorb-paper-reversal",
+    "strategyName": "QORB PAPER REVERSAL BOT V1",
+    "experimentType": "legacy_bot_log",
+    "stage": "paper",
+    "status": "historical_observation",
+    "source": "legacy-log:logs.1787831573604.json",
+    "parameters": {
+      "firstTimestamp": "2026-08-26T23:00:14.977465296Z",
+      "lastTimestamp": "2026-08-27T11:32:36.430505472Z"
+    },
+    "metrics": {
+      "records": 1000,
+      "startingBalanceUSDT": 1000,
+      "currentBalanceUSDT": 954.5062,
+      "realizedPnlUSDT": -45.4938,
+      "closedTrades": 13,
+      "openPositions": 0,
+      "waitCount": 0,
+      "noSignalCount": 0,
+      "fatalErrorCount": 0,
+      "skippedInstrumentCount": 50
+    },
+    "decision": "Use as historical evidence only; do not promote to live trading from log data alone.",
+    "notes": [
+      "negative realized PnL: -45.4938 USDT",
+      "data/runtime issues observed: fatal=0, skipped instruments=50"
+    ],
+    "tags": ["legacy", "log-import", "paper"]
+  }
+]
