@@ -1,9 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
-
-const DEFAULT_BRAIN_DIR = path.resolve(process.env.BRAIN_DATA_DIR || "data/brain");
-const DEFAULT_EXPERIMENTS_FILE = path.join(DEFAULT_BRAIN_DIR, "experiments.ndjson");
+import {
+  BRAIN_DIR as DEFAULT_BRAIN_DIR,
+  EXPERIMENTS_FILE as DEFAULT_EXPERIMENTS_FILE,
+} from "../runtime/runtimePaths.js";
 
 function ensureDir(dirPath) {
   fs.mkdirSync(dirPath, { recursive: true });

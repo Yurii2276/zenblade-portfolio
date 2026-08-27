@@ -31,3 +31,6 @@ jobs:
 
       - name: Test Paper Promotion Gate
         run: npm run test:auto-paper
+
+      - name: Test Autonomous Orchestrator
+        run: npm run test:autonomous
