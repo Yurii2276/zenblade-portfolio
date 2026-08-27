@@ -82,19 +82,19 @@ function summarizeLog(records, fileName) {
   };
 }
 
-export function importBotLog(filePath) {
+export function importBotLog(filePath, options = {}) {
   const raw = JSON.parse(fs.readFileSync(filePath, "utf8"));
   if (!Array.isArray(raw)) {
     throw new Error(`Expected JSON array in ${filePath}`);
   }
 
-  return appendExperiment(summarizeLog(raw, path.basename(filePath)));
+  return appendExperiment(summarizeLog(raw, path.basename(filePath)), options);
 }
 
-export function importBotLogs(filePaths) {
+export function importBotLogs(filePaths, options = {}) {
   const results = [];
   for (const filePath of filePaths) {
-    results.push({ filePath, ...importBotLog(filePath) });
+    results.push({ filePath, ...importBotLog(filePath, options) });
   }
   return results;
 }
