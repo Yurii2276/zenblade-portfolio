@@ -17,13 +17,20 @@ const SEARCH_SPACE = {
   atrStopMultiplier: [0.8, 1.0, 1.2, 1.5],
   atrTakeMultiplier: [1.5, 1.8, 2.2, 2.6],
   useHtfFilter: [true, false],
-  minScoreForEntry: [65, 70, 75, 80, 85],
   pullbackLookback: [5, 8, 12],
   pullbackTolerancePct: [0.0015, 0.002, 0.003],
   breakoutLookback: [20, 30, 40],
   breakoutRecentLookback: [6, 10, 15],
   breakoutBufferPct: [0, 0.001, 0.002],
   retestTolerancePct: [0.0015, 0.0025, 0.004],
+  breakoutRegimePairs: [
+    [20, 60],
+    [30, 100],
+    [50, 150],
+  ],
+  breakoutMinEmaSpreadPct: [null, 0, 0.1, 0.25],
+  breakoutMaxAtrPct: [null, 1.5, 2.5, 4],
+  breakoutMinRsi: [null, 45, 50, 55],
 };
 
 function hashSeed(text) {
@@ -60,7 +67,6 @@ function buildParameters(strategyName, random) {
     atrStopMultiplier: pick(SEARCH_SPACE.atrStopMultiplier, random),
     atrTakeMultiplier: pick(SEARCH_SPACE.atrTakeMultiplier, random),
     useHtfFilter: pick(SEARCH_SPACE.useHtfFilter, random),
-    minScoreForEntry: pick(SEARCH_SPACE.minScoreForEntry, random),
   };
 
   if (strategyName === "trendPullback") {
@@ -72,12 +78,21 @@ function buildParameters(strategyName, random) {
   }
 
   if (strategyName === "breakoutRetest") {
+    const [breakoutRegimeEmaFast, breakoutRegimeEmaSlow] = pick(
+      SEARCH_SPACE.breakoutRegimePairs,
+      random
+    );
     return {
       ...common,
       breakoutLookback: pick(SEARCH_SPACE.breakoutLookback, random),
       breakoutRecentLookback: pick(SEARCH_SPACE.breakoutRecentLookback, random),
       breakoutBufferPct: pick(SEARCH_SPACE.breakoutBufferPct, random),
       retestTolerancePct: pick(SEARCH_SPACE.retestTolerancePct, random),
+      breakoutRegimeEmaFast,
+      breakoutRegimeEmaSlow,
+      breakoutMinEmaSpreadPct: pick(SEARCH_SPACE.breakoutMinEmaSpreadPct, random),
+      breakoutMaxAtrPct: pick(SEARCH_SPACE.breakoutMaxAtrPct, random),
+      breakoutMinRsi: pick(SEARCH_SPACE.breakoutMinRsi, random),
     };
   }
 
@@ -104,7 +119,9 @@ export function generateCandidates({
 
     const random = makeRandom(`${seed}:${strategyName}`);
     let attempts = 0;
-    while (candidates.filter((candidate) => candidate.strategyName === strategyName).length < candidatesPerStrategy) {
+    let createdForStrategy = 0;
+
+    while (createdForStrategy < candidatesPerStrategy) {
       attempts += 1;
       if (attempts > candidatesPerStrategy * 50) break;
 
@@ -112,9 +129,10 @@ export function generateCandidates({
       const key = stableKey(strategyName, parameters);
       if (seen.has(key)) continue;
       seen.add(key);
+      createdForStrategy += 1;
 
       candidates.push({
-        candidateId: `${strategyName}-${String(candidates.length + 1).padStart(4, "0")}`,
+        candidateId: `${strategyName}-${String(createdForStrategy).padStart(4, "0")}`,
         strategyName,
         parameters,
       });
