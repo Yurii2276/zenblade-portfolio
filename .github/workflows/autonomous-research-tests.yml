@@ -28,3 +28,6 @@ jobs:
 
       - name: Test Strategy Lab
         run: npm run test:lab
+
+      - name: Test Paper Promotion Gate
+        run: npm run test:auto-paper

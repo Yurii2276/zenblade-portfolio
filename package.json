@@ -47,7 +47,11 @@
     "test:brain": "node src/brain/testExperimentStore.js && node src/brain/testBotLogImport.js",
     "lab:run": "node src/lab/strategyLab.js",
     "lab:walk-forward": "node src/lab/walkForwardLab.js",
-    "test:lab": "node src/lab/testStrategyLab.js && node src/lab/testWalkForwardValidator.js"
+    "lab:promote-paper": "node src/paper/paperPromotionGate.js",
+    "paper:auto": "node src/paper/autonomousPaperEngine.js",
+    "paper:auto-loop": "node src/paper/autonomousPaperLoop.js",
+    "test:lab": "node src/lab/testStrategyLab.js && node src/lab/testWalkForwardValidator.js",
+    "test:auto-paper": "node src/paper/testPaperPromotionGate.js && node src/paper/testAutonomousPaperEngine.js"
   },
   "main": "src/index.js",
   "license": "MIT"
