@@ -4,10 +4,17 @@ function resolvePath(value, fallback) {
   return path.resolve(value || fallback);
 }
 
-export const DATA_DIR = resolvePath(
-  process.env.ZENBLADE_DATA_DIR,
-  "data"
-);
+function defaultDataDir() {
+  if (process.env.ZENBLADE_DATA_DIR) {
+    return process.env.ZENBLADE_DATA_DIR;
+  }
+  if (process.env.RAILWAY_VOLUME_MOUNT_PATH) {
+    return path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, "zenblade");
+  }
+  return "data";
+}
+
+export const DATA_DIR = resolvePath(defaultDataDir(), "data");
 
 export const BRAIN_DIR = resolvePath(
   process.env.BRAIN_DATA_DIR,
@@ -65,5 +72,6 @@ export function runtimePathSummary() {
     orchestratorStateFile: ORCHESTRATOR_STATE_FILE,
     orchestratorRunsFile: ORCHESTRATOR_RUNS_FILE,
     orchestratorLockFile: ORCHESTRATOR_LOCK_FILE,
+    railwayVolumeMountPath: process.env.RAILWAY_VOLUME_MOUNT_PATH ?? null,
   };
 }
