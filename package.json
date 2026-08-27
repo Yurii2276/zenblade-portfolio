@@ -40,8 +40,9 @@
     "test:macro-gold-dxy-integration": "node src/paper/testMacroGoldDxyIntegrationFlag.js",
     "research:cross-rs-15m": "node src/research/crossAssetRelativeStrength15m.js",
     "brain:seed": "node src/brain/importLegacyResearchMemory.js",
+    "brain:import-logs": "node src/brain/importBotLogs.js",
     "brain:report": "node src/brain/report.js",
-    "test:brain": "node src/brain/testExperimentStore.js"
+    "test:brain": "node src/brain/testExperimentStore.js && node src/brain/testBotLogImport.js"
   },
   "main": "src/index.js",
   "license": "MIT"
