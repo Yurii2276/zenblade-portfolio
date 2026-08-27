@@ -38,7 +38,10 @@
     "paper:macro-gold-dxy-dry-run": "node src/paper/macroGoldDxyPaperModule.js",
     "test:macro-gold-dxy-paper": "node src/paper/testMacroGoldDxyPaperModule.js",
     "test:macro-gold-dxy-integration": "node src/paper/testMacroGoldDxyIntegrationFlag.js",
-    "research:cross-rs-15m": "node src/research/crossAssetRelativeStrength15m.js"
+    "research:cross-rs-15m": "node src/research/crossAssetRelativeStrength15m.js",
+    "brain:seed": "node src/brain/importLegacyResearchMemory.js",
+    "brain:report": "node src/brain/report.js",
+    "test:brain": "node src/brain/testExperimentStore.js"
   },
   "main": "src/index.js",
   "license": "MIT"
