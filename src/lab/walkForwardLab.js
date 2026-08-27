@@ -72,9 +72,10 @@ async function loadMarketData(symbol, candleLimit) {
   const quality = validateCandles(candles);
   if (!quality.ok) throw new Error(`${symbol}: ${quality.reason}`);
 
-  const htfTarget = Math.min(
-    Math.max(config.htfCandlesLimit, 500),
-    Math.max(500, Math.ceil(candleLimit / 12) + 150)
+  const htfTarget = Math.max(
+    config.htfCandlesLimit,
+    500,
+    Math.ceil(candleLimit / 12) + 150
   );
   const htfCandles = await fetchHistoricalCandles({
     symbol,
