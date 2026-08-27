@@ -39,7 +39,9 @@
     "test:macro-gold-dxy-paper": "node src/paper/testMacroGoldDxyPaperModule.js",
     "test:macro-gold-dxy-integration": "node src/paper/testMacroGoldDxyIntegrationFlag.js",
     "research:cross-rs-15m": "node src/research/crossAssetRelativeStrength15m.js",
-    "brain:seed": "node src/brain/importLegacyResearchMemory.js",
+    "brain:seed:research": "node src/brain/importLegacyResearchMemory.js",
+    "brain:seed:history": "node src/brain/importSeedKnowledge.js",
+    "brain:seed": "npm run brain:seed:research && npm run brain:seed:history",
     "brain:import-logs": "node src/brain/importBotLogs.js",
     "brain:report": "node src/brain/report.js",
     "test:brain": "node src/brain/testExperimentStore.js && node src/brain/testBotLogImport.js"
