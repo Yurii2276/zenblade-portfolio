@@ -42,6 +42,14 @@ function stableStringify(value) {
   return JSON.stringify(value);
 }
 
+function readJson(filePath, fallback) {
+  try {
+    return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  } catch {
+    return structuredClone(fallback);
+  }
+}
+
 function cleanParameters(experiment) {
   const source = experiment.parameters ?? {};
   const {
@@ -58,6 +66,20 @@ function cleanParameters(experiment) {
     strategyParameters,
     learning: learning ?? null,
   };
+}
+
+function latestFeedbackByParent(experiments) {
+  const latest = new Map();
+  for (const item of experiments ?? []) {
+    if (item.experimentType !== "paper_feedback") continue;
+    const parentFingerprint = item.parameters?.parentExperimentFingerprint;
+    if (!parentFingerprint) continue;
+    const current = latest.get(parentFingerprint);
+    if (!current || String(item.createdAt ?? "") > String(current.createdAt ?? "")) {
+      latest.set(parentFingerprint, item);
+    }
+  }
+  return latest;
 }
 
 export function evaluatePaperPromotion(experiment, policy = DEFAULT_PAPER_GATE_POLICY) {
@@ -108,6 +130,7 @@ export function selectPaperCandidates(
   policy = DEFAULT_PAPER_GATE_POLICY
 ) {
   const latestByIdentity = new Map();
+  const feedbackByParent = latestFeedbackByParent(experiments);
 
   for (const experiment of experiments ?? []) {
     if (experiment.experimentType !== "strategy_lab_walk_forward") continue;
@@ -128,16 +151,25 @@ export function selectPaperCandidates(
     .map((experiment) => ({
       experiment,
       verdict: evaluatePaperPromotion(experiment, policy),
+      feedback: feedbackByParent.get(experiment.fingerprint) ?? null,
     }))
-    .filter((item) => item.verdict.approved)
+    .filter(
+      (item) =>
+        item.verdict.approved &&
+        item.feedback?.status !== "paper_demoted"
+    )
     .sort((a, b) => b.verdict.rankScore - a.verdict.rankScore)
     .slice(0, policy.maxApprovedCandidates);
 }
 
-export function buildPaperApproval(item, policy = DEFAULT_PAPER_GATE_POLICY) {
+export function buildPaperApproval(
+  item,
+  policy = DEFAULT_PAPER_GATE_POLICY,
+  previousApproval = null
+) {
   const { experiment, verdict } = item;
   const { candidateId, strategyParameters, learning } = cleanParameters(experiment);
-  const approvedAt = new Date().toISOString();
+  const approvedAt = previousApproval?.approvedAt ?? new Date().toISOString();
 
   return {
     approvalId: `paper:${experiment.fingerprint}`,
@@ -169,6 +201,9 @@ export function buildPaperApproval(item, policy = DEFAULT_PAPER_GATE_POLICY) {
       minDays: policy.minPaperDays,
       requiresManualLiveApproval: true,
     },
+    ...(previousApproval?.paperFeedback
+      ? { paperFeedback: previousApproval.paperFeedback }
+      : {}),
     mode: "paper",
     liveTradingAllowed: false,
   };
@@ -190,12 +225,18 @@ export function writePaperManifest(approvals, filePath = DEFAULT_MANIFEST) {
 export function runPaperPromotionGate(options = {}) {
   const policy = { ...DEFAULT_PAPER_GATE_POLICY, ...(options.policy ?? {}) };
   const experiments = options.experiments ?? loadExperiments(options.experimentsFile);
-  const selected = selectPaperCandidates(experiments, policy);
-  const approvals = selected.map((item) => buildPaperApproval(item, policy));
-  const manifest = writePaperManifest(
-    approvals,
-    options.manifestFile ?? DEFAULT_MANIFEST
+  const manifestFile = options.manifestFile ?? DEFAULT_MANIFEST;
+  const previousManifest = readJson(manifestFile, { approvals: [] });
+  const previousById = new Map(
+    (previousManifest.approvals ?? []).map((approval) => [approval.approvalId, approval])
   );
+
+  const selected = selectPaperCandidates(experiments, policy);
+  const approvals = selected.map((item) => {
+    const approvalId = `paper:${item.experiment.fingerprint}`;
+    return buildPaperApproval(item, policy, previousById.get(approvalId) ?? null);
+  });
+  const manifest = writePaperManifest(approvals, manifestFile);
 
   for (let index = 0; index < selected.length; index += 1) {
     const { experiment, verdict } = selected[index];
