@@ -1,5 +1,6 @@
 import { getSignal } from "../strategy.js";
 import { calculateLongTrade } from "../riskManager.js";
+import { summarizeTradeRegimes } from "../intelligence/regimeDetector.js";
 
 const DEFAULT_INITIAL_BALANCE = 1000;
 
@@ -149,6 +150,7 @@ export function runLongBacktest({
   const grossLosses = Math.abs(losses.reduce((sum, trade) => sum + trade.netPnl, 0));
   const totalFees = trades.reduce((sum, trade) => sum + trade.fees, 0);
   const netPnl = balance - initialBalance;
+  const regimeSummary = summarizeTradeRegimes(candles, trades);
 
   return {
     trades,
@@ -164,6 +166,7 @@ export function runLongBacktest({
       expectancyUSDT: trades.length ? round(netPnl / trades.length, 4) : 0,
       totalFeesUSDT: round(totalFees, 2),
       finalBalanceUSDT: round(balance, 2),
+      regimeSummary,
     },
   };
 }
