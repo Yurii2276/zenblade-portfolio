@@ -45,6 +45,11 @@ export const AUTONOMOUS_PAPER_TRADES_FILE = resolvePath(
   path.join(BRAIN_DIR, "autonomous-paper-trades.json")
 );
 
+export const PAPER_FEEDBACK_FILE = resolvePath(
+  process.env.PAPER_FEEDBACK_FILE,
+  path.join(BRAIN_DIR, "paper-feedback.json")
+);
+
 export const ORCHESTRATOR_DIR = resolvePath(
   process.env.AUTONOMOUS_ORCHESTRATOR_DIR,
   path.join(BRAIN_DIR, "orchestrator")
@@ -73,6 +78,7 @@ export function runtimePathSummary() {
     paperManifestFile: PAPER_MANIFEST_FILE,
     autonomousPaperStateFile: AUTONOMOUS_PAPER_STATE_FILE,
     autonomousPaperTradesFile: AUTONOMOUS_PAPER_TRADES_FILE,
+    paperFeedbackFile: PAPER_FEEDBACK_FILE,
     orchestratorStateFile: ORCHESTRATOR_STATE_FILE,
     orchestratorRunsFile: ORCHESTRATOR_RUNS_FILE,
     orchestratorLockFile: ORCHESTRATOR_LOCK_FILE,
