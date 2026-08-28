@@ -47,7 +47,13 @@ function approval(id, approvedAt = "2026-07-20T00:00:00.000Z") {
   };
 }
 
-function makeTrades(approvalId, pnls, startDay = 1) {
+function makeTrades(
+  approvalId,
+  pnls,
+  startIso = "2026-08-01T00:00:00.000Z",
+  intervalHours = 12
+) {
+  const start = Date.parse(startIso);
   return pnls.map((pnl, index) => ({
     id: `${approvalId}:${index}`,
     approvalId,
@@ -56,7 +62,7 @@ function makeTrades(approvalId, pnls, startDay = 1) {
     symbol: "ETH-USDT",
     netPnlUSDT: pnl,
     feesUSDT: 0.05,
-    closedAt: new Date(Date.UTC(2026, 7, startDay + index, 12, 0, 0)).toISOString(),
+    closedAt: new Date(start + index * intervalHours * 3_600_000).toISOString(),
     marketRegimeAtEntry: {
       key: index % 2 === 0 ? "bull_normal_vol" : "sideways_low_vol",
     },
@@ -68,12 +74,27 @@ const watchApproval = approval("watch");
 const demotedApproval = approval("demoted");
 const provenApproval = approval("proven");
 
-const watchTrades = makeTrades(watchApproval.approvalId, [1, -0.5, 1.2, -0.4, 0.8], 20);
-const demotedTrades = makeTrades(demotedApproval.approvalId, Array(12).fill(-2), 1);
+const watchTrades = makeTrades(
+  watchApproval.approvalId,
+  [1, -0.5, 1.2, -0.4, 0.8],
+  "2026-08-20T00:00:00.000Z",
+  24
+);
+const demotedTrades = makeTrades(
+  demotedApproval.approvalId,
+  Array(12).fill(-2),
+  "2026-08-01T00:00:00.000Z",
+  12
+);
 const provenPnls = Array.from({ length: 50 }, (_, index) =>
   index % 5 === 4 ? -1 : 2
 );
-const provenTrades = makeTrades(provenApproval.approvalId, provenPnls, 1);
+const provenTrades = makeTrades(
+  provenApproval.approvalId,
+  provenPnls,
+  "2026-08-01T00:00:00.000Z",
+  12
+);
 
 const watchStats = summarizeApprovalPaperPerformance({
   approval: watchApproval,
