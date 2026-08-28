@@ -9,6 +9,14 @@ function intEnv(name, fallback) {
   return Number.isFinite(value) && value > 0 ? value : fallback;
 }
 
+function boolEnv(name, fallback) {
+  const raw = String(process.env[name] ?? "").trim().toLowerCase();
+  if (!raw) return fallback;
+  if (["1", "true", "yes", "on"].includes(raw)) return true;
+  if (["0", "false", "no", "off"].includes(raw)) return false;
+  return fallback;
+}
+
 function csvEnv(name) {
   return (process.env[name] ?? "")
     .split(",")
@@ -32,21 +40,47 @@ function strategyParameters(experiment) {
   };
 }
 
+function finite(value, fallback = 0) {
+  return Number.isFinite(Number(value)) ? Number(value) : fallback;
+}
+
+export function isStrongWatchCandidate(experiment) {
+  if (experiment?.status !== "watch") return false;
+
+  const test = experiment.metrics?.test ?? {};
+  return (
+    finite(test.returnPct) > 0.5 &&
+    finite(test.profitFactor) >= 1.2 &&
+    finite(test.totalTrades) >= 10 &&
+    finite(test.maxDrawdownPct, 100) <= 12
+  );
+}
+
 export function selectHoldoutCandidates(experiments, options = {}) {
   const symbols = new Set(options.symbols ?? []);
   const strategies = new Set(options.strategies ?? []);
   const maxCandidates = options.maxCandidates ?? 20;
+  const includeStrongWatch = options.includeStrongWatch ?? true;
 
   const filtered = experiments
     .filter((item) =>
       item.experimentType === "strategy_lab_holdout" &&
-      item.status === "candidate" &&
+      (item.status === "candidate" || (includeStrongWatch && isStrongWatchCandidate(item))) &&
       item.market &&
       item.strategyId
     )
     .filter((item) => symbols.size === 0 || symbols.has(item.market))
     .filter((item) => strategies.size === 0 || strategies.has(item.strategyId))
-    .sort((a, b) => String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? "")));
+    .sort((a, b) => {
+      const statusRank = (item) => item.status === "candidate" ? 2 : 1;
+      const rankDiff = statusRank(b) - statusRank(a);
+      if (rankDiff !== 0) return rankDiff;
+
+      const scoreDiff = finite(b.metrics?.score) - finite(a.metrics?.score);
+      if (scoreDiff !== 0) return scoreDiff;
+
+      return String(b.createdAt ?? "").localeCompare(String(a.createdAt ?? ""));
+    });
 
   const selected = [];
   const seen = new Set();
@@ -109,6 +143,7 @@ function persistWalkForward({ experiment, result, candles, folds }) {
       ...parameters,
       folds,
       validation: "expanding-window chronological walk-forward",
+      parentHoldoutStatus: experiment.status,
     },
     metrics: {
       score: result.verdict.score,
@@ -121,8 +156,16 @@ function persistWalkForward({ experiment, result, candles, folds }) {
       : result.verdict.status === "watch"
         ? "Walk-forward is mixed. Keep in research and collect more evidence."
         : "Rejected by walk-forward validation for this market and parameter set.",
-    notes: result.verdict.reasons,
-    tags: ["strategy-lab", "walk-forward-v1", result.verdict.status],
+    notes: [
+      ...(result.verdict.reasons ?? []),
+      ...(experiment.status === "watch" ? ["promoted_to_walk_forward_as_strong_watch_challenge"] : []),
+    ],
+    tags: [
+      "strategy-lab",
+      "walk-forward-v1",
+      result.verdict.status,
+      ...(experiment.status === "watch" ? ["strong-watch-challenge"] : []),
+    ],
   });
 }
 
@@ -132,6 +175,7 @@ export async function runWalkForwardLab() {
   const minTrainCandles = intEnv("WF_MIN_TRAIN", 600);
   const minTestCandles = intEnv("WF_MIN_TEST", 150);
   const maxCandidates = intEnv("WF_MAX_CANDIDATES", 20);
+  const includeStrongWatch = boolEnv("WF_INCLUDE_STRONG_WATCH", true);
   const symbols = csvEnv("WF_SYMBOLS");
   const strategies = csvEnv("WF_STRATEGIES");
 
@@ -140,16 +184,20 @@ export async function runWalkForwardLab() {
     symbols,
     strategies,
     maxCandidates,
+    includeStrongWatch,
   });
+
+  const strongWatchCount = candidates.filter((item) => item.status === "watch").length;
 
   console.log("=== Autonomous Walk-Forward Validator v1 ===");
   console.log("Mode: RESEARCH ONLY — no real orders, no automatic paper promotion");
   console.log(`Holdout candidates selected: ${candidates.length}`);
+  console.log(`Strong-watch challenge selected: ${strongWatchCount}`);
   console.log(`Candles target: ${candleLimit}`);
   console.log(`Folds: ${folds} | min train: ${minTrainCandles} | min test: ${minTestCandles}`);
 
   if (candidates.length === 0) {
-    console.log("No holdout candidates found. Run `npm run lab:run` first.");
+    console.log("No holdout candidates found. Strategy Lab must first produce a candidate or a strong watch result.");
     return [];
   }
 
@@ -202,6 +250,7 @@ export async function runWalkForwardLab() {
         `${result.verdict.status.toUpperCase().padEnd(10)} ` +
         `${experiment.strategyId.padEnd(16)} ${symbol.padEnd(10)} ` +
         `${String(candidateId ?? "-").padEnd(22)} ` +
+        `parent=${experiment.status.padEnd(9)} ` +
         `score=${String(result.verdict.score).padStart(7)} ` +
         `folds+%=${String(Math.round(result.aggregate.profitableFoldRatio * 100)).padStart(3)} ` +
         `ret=${String(result.aggregate.totalReturnPct).padStart(7)}% ` +
