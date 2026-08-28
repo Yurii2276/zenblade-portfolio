@@ -22,6 +22,8 @@ const baseParameters = {
   learning: { origin: "exploration" },
 };
 
+const strategyParameters = cleanStrategyParameters(baseParameters);
+
 const strongWatch = {
   id: "holdout-watch",
   fingerprint: "fp-watch",
@@ -68,6 +70,47 @@ const validatedWalkForward = {
   },
 };
 
+const paperProven = {
+  id: "paper-proven",
+  fingerprint: "fp-paper-proven",
+  experimentType: "paper_feedback",
+  strategyId: "trendMomentum",
+  market: "BTC-USDT",
+  status: "paper_proven",
+  createdAt: "2026-08-28T10:00:00Z",
+  parameters: {
+    approvalId: "paper:fp-paper-proven",
+    parentExperimentFingerprint: "fp-parent-wf",
+    strategyParameters,
+  },
+  metrics: {
+    closedTrades: 55,
+    returnPct: 3.1,
+    profitFactor: 1.48,
+    maxDrawdownPct: 2.2,
+  },
+};
+
+const paperDemoted = {
+  id: "paper-demoted",
+  fingerprint: "fp-paper-demoted",
+  experimentType: "paper_feedback",
+  strategyId: "trendMomentum",
+  market: "BTC-USDT",
+  status: "paper_demoted",
+  createdAt: "2026-08-28T10:30:00Z",
+  parameters: {
+    approvalId: "paper:fp-paper-demoted",
+    strategyParameters,
+  },
+  metrics: {
+    closedTrades: 18,
+    returnPct: -2.1,
+    profitFactor: 0.55,
+    maxDrawdownPct: 2.8,
+  },
+};
+
 const rejected = {
   id: "rejected",
   fingerprint: "fp-rejected",
@@ -89,6 +132,8 @@ const rejected = {
 
 assert.equal(isEligibleParent(strongWatch), true);
 assert.equal(isEligibleParent(validatedWalkForward), true);
+assert.equal(isEligibleParent(paperProven), true);
+assert.equal(isEligibleParent(paperDemoted), false);
 assert.equal(isEligibleParent(rejected), false);
 
 const cleaned = cleanStrategyParameters(validatedWalkForward.parameters);
@@ -100,12 +145,14 @@ assert.equal(cleaned.learning, undefined);
 assert.equal(cleaned.emaFast, 12);
 
 const parents = selectLearningParents(
-  [strongWatch, validatedWalkForward, rejected],
+  [strongWatch, validatedWalkForward, paperProven, paperDemoted, rejected],
   "trendMomentum",
   { maxParents: 5 }
 );
-assert.equal(parents.length, 2);
-assert.equal(parents[0].experiment.id, "wf-validated");
+assert.equal(parents.length, 3);
+assert.equal(parents[0].experiment.id, "paper-proven");
+assert.equal(parents[0].parameters.emaFast, 12);
+assert.equal(parents.some((item) => item.experiment.id === "paper-demoted"), false);
 
 const mutation = mutateParentParameters(
   "trendMomentum",
@@ -117,7 +164,7 @@ assert.ok(Number.isFinite(mutation.emaFast));
 assert.ok(Number.isFinite(mutation.emaSlow));
 
 const learned = generateLearningCandidates({
-  experiments: [strongWatch, validatedWalkForward, rejected],
+  experiments: [strongWatch, validatedWalkForward, paperProven, paperDemoted, rejected],
   strategies: ["trendMomentum"],
   candidatesPerStrategy: 8,
   explorationFraction: 0.25,
@@ -126,7 +173,18 @@ const learned = generateLearningCandidates({
 assert.equal(learned.length, 8);
 assert.equal(learned.filter((item) => item.origin === "exploration").length, 2);
 assert.equal(learned.filter((item) => item.origin === "learned").length, 6);
-assert.ok(learned.filter((item) => item.origin === "learned").every((item) => item.lineage?.parentFingerprint));
+assert.ok(
+  learned
+    .filter((item) => item.origin === "learned")
+    .every((item) => item.lineage?.parentFingerprint)
+);
+assert.ok(
+  learned.some(
+    (item) =>
+      item.origin === "learned" &&
+      item.lineage?.parentExperimentType === "paper_feedback"
+  )
+);
 
 const uniqueKeys = new Set(
   learned.map((item) => candidateParameterKey(item.strategyName, item.parameters))
