@@ -33,9 +33,18 @@ function stableStringify(value) {
 }
 
 function strategyParameters(experiment) {
-  const { candidateId, split, ...parameters } = experiment.parameters ?? {};
+  const {
+    candidateId,
+    split,
+    learning,
+    parentHoldoutStatus,
+    folds,
+    validation,
+    ...parameters
+  } = experiment.parameters ?? {};
   return {
     candidateId: candidateId ?? null,
+    learning: learning ?? null,
     parameters,
   };
 }
@@ -121,7 +130,7 @@ async function loadMarketData(symbol, candleLimit) {
 }
 
 function persistWalkForward({ experiment, result, candles, folds }) {
-  const { candidateId, parameters } = strategyParameters(experiment);
+  const { candidateId, learning, parameters } = strategyParameters(experiment);
   const foldMetrics = result.foldResults.map((fold) => ({
     fold: fold.fold,
     period: fold.period,
@@ -141,6 +150,7 @@ function persistWalkForward({ experiment, result, candles, folds }) {
     parameters: {
       candidateId,
       ...parameters,
+      ...(learning ? { learning } : {}),
       folds,
       validation: "expanding-window chronological walk-forward",
       parentHoldoutStatus: experiment.status,
@@ -164,6 +174,7 @@ function persistWalkForward({ experiment, result, candles, folds }) {
       "strategy-lab",
       "walk-forward-v1",
       result.verdict.status,
+      ...(learning?.origin ? [learning.origin] : []),
       ...(experiment.status === "watch" ? ["strong-watch-challenge"] : []),
     ],
   });
