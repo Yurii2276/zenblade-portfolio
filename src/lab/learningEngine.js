@@ -11,6 +11,7 @@ const META_KEYS = new Set([
   "folds",
   "validation",
   "learning",
+  "parentHoldoutStatus",
 ]);
 
 function finite(value, fallback = 0) {
