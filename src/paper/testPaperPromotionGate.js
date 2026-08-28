@@ -32,6 +32,11 @@ function experiment(overrides = {}) {
       atrStopMultiplier: 1.2,
       atrTakeMultiplier: 1.8,
       useHtfFilter: false,
+      learning: {
+        origin: "learned",
+        parentFingerprint: "parent-123",
+      },
+      parentHoldoutStatus: "candidate",
       folds: 4,
       validation: "expanding-window chronological walk-forward",
     },
@@ -65,7 +70,11 @@ assert.equal(approval.riskPolicy.riskPerTrade, 0.0025);
 assert.equal(approval.riskPolicy.maxPositionValuePct, 0.1);
 assert.equal(approval.graduationPolicy.requiresManualLiveApproval, true);
 assert.equal(approval.strategyParameters.folds, undefined);
+assert.equal(approval.strategyParameters.learning, undefined);
+assert.equal(approval.strategyParameters.parentHoldoutStatus, undefined);
 assert.equal(approval.strategyParameters.emaFast, 20);
+assert.equal(approval.learningLineage.origin, "learned");
+assert.deepEqual(approval.researchEvidence.regimeEvidence, { byRegime: {} });
 
 const badDrawdown = experiment({
   fingerprint: "wf-bad-dd",

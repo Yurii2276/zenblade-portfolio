@@ -5,6 +5,8 @@ import { fetchHistoricalCandles } from "../okxClient.js";
 import { getSignal } from "../strategy.js";
 import { calculateLongTrade } from "../riskManager.js";
 import { validateCandles } from "../lab/backtestEvaluator.js";
+import { classifyMarketRegime } from "../intelligence/regimeDetector.js";
+import { rankApprovalsForRegime } from "../intelligence/metaSelector.js";
 
 const MANIFEST_PATH = path.resolve(
   process.env.PAPER_APPROVED_MANIFEST || "data/brain/paper-approved.json"
@@ -159,7 +161,14 @@ function countOpenForApproval(state, approvalId) {
   ).length;
 }
 
-export function planPaperEntry({ approval, signal, state, candle }) {
+export function planPaperEntry({
+  approval,
+  signal,
+  state,
+  candle,
+  marketRegime = null,
+  metaSelection = null,
+}) {
   if (!SUPPORTED_PAPER_STRATEGIES.has(approval.strategyId)) return null;
   if (signal?.action !== "BUY" || !signal.indicators) return null;
 
@@ -211,6 +220,8 @@ export function planPaperEntry({ approval, signal, state, candle }) {
     positionValueUSDT: planned.positionValue,
     riskAmountUSDT: planned.riskAmount,
     feeRate: testConfig.feeRate,
+    marketRegimeAtEntry: marketRegime,
+    metaSelectionAtEntry: metaSelection,
     signalReason: signal.reason,
     signalIndicators: signal.indicators,
   };
@@ -330,7 +341,27 @@ export async function runAutonomousPaperOnce(options = {}) {
   let riskState = calculatePaperRiskState(state, approvals);
   if (riskState.pausedReason) state.pausedReason = riskState.pausedReason;
 
+  // Meta Selector only changes evaluation order. It never changes risk limits
+  // and it never bypasses the paper-promotion manifest.
+  const regimeBySymbol = {};
   for (const approval of approvals) {
+    if (regimeBySymbol[approval.symbol]) continue;
+    try {
+      const { candles } = await getMarket(approval);
+      regimeBySymbol[approval.symbol] = classifyMarketRegime(candles);
+    } catch {
+      regimeBySymbol[approval.symbol] = {
+        trend: "unknown",
+        volatility: "unknown",
+        key: "unknown",
+        confidence: 0,
+      };
+    }
+  }
+  const metaRanking = rankApprovalsForRegime(approvals, regimeBySymbol);
+
+  for (const ranked of metaRanking) {
+    const approval = ranked.approval;
     if (state.pausedReason) break;
     if (state.openPositions.length >= riskState.maxTotalOpenPositions) break;
 
@@ -356,7 +387,19 @@ export async function runAutonomousPaperOnce(options = {}) {
       htfCandles,
       config: buildSignalConfig(approval),
     });
-    const position = planPaperEntry({ approval, signal, state, candle: lastCandle });
+    const position = planPaperEntry({
+      approval,
+      signal,
+      state,
+      candle: lastCandle,
+      marketRegime: ranked.currentRegime,
+      metaSelection: {
+        metaScore: ranked.metaScore,
+        compatibility: ranked.compatibility.status,
+        reason: ranked.compatibility.reason,
+        scoreAdjustment: ranked.compatibility.scoreAdjustment,
+      },
+    });
     if (position) state.openPositions.push(position);
   }
 
@@ -374,6 +417,14 @@ export async function runAutonomousPaperOnce(options = {}) {
     state,
     trades,
     riskState,
+    metaRanking: metaRanking.map((item) => ({
+      approvalId: item.approval.approvalId,
+      strategyId: item.approval.strategyId,
+      symbol: item.approval.symbol,
+      currentRegime: item.currentRegime,
+      compatibility: item.compatibility,
+      metaScore: item.metaScore,
+    })),
   };
 }
 
@@ -381,7 +432,7 @@ const isDirectRun = process.argv[1] && import.meta.url === `file://${process.arg
 if (isDirectRun) {
   runAutonomousPaperOnce()
     .then((result) => {
-      console.log("=== Autonomous Paper Engine v1 ===");
+      console.log("=== Autonomous Paper Engine v1 + Meta Selector v1 ===");
       console.log("Mode: PAPER ONLY — no exchange order endpoints exist in this engine");
       console.log(`Approved strategies: ${result.approvals}`);
       console.log(`Balance: ${result.state.balance} USDT`);
@@ -390,6 +441,13 @@ if (isDirectRun) {
       console.log(`Drawdown: ${result.riskState.drawdownPct}%`);
       console.log(`Daily loss: ${result.riskState.dayLossPct}%`);
       console.log(`Paused: ${result.state.pausedReason ?? "no"}`);
+      for (const item of result.metaRanking.slice(0, 5)) {
+        console.log(
+          `META ${item.strategyId}/${item.symbol} ` +
+          `regime=${item.currentRegime?.key ?? "unknown"} ` +
+          `fit=${item.compatibility.status} score=${item.metaScore}`
+        );
+      }
     })
     .catch((error) => {
       console.error("Autonomous paper engine failed:", error);
