@@ -5,6 +5,7 @@ import {
   releaseOrchestratorLock,
   runAutonomousCycle,
 } from "./orchestrator.js";
+import { recoverRailwayDeploymentLock } from "./deploymentLockHandoff.js";
 import { runPaperFeedback } from "../paper/paperFeedback.js";
 
 const DEFAULT_LOOP_MINUTES = 5;
@@ -62,8 +63,20 @@ export async function runAutonomousFeedbackLoop(options = {}) {
   const runOnce = options.runOnce ?? boolEnv("AUTONOMOUS_RUN_ONCE", false);
   const feedbackRunner = options.feedbackRunner ?? runPaperFeedback;
   const cycleRunner = options.cycleRunner ?? runAutonomousCycle;
+  const handoffRunner = options.handoffRunner ?? recoverRailwayDeploymentLock;
 
   const persistence = assertPersistenceReady(options.persistenceOptions);
+
+  const handoff = handoffRunner({
+    handoffGraceMinutes: options.handoffGraceMinutes,
+  });
+  if (handoff?.recovered) {
+    console.log(
+      `Recovered stale Railway lock from deployment ${handoff.previousDeploymentId} ` +
+        `for ${handoff.currentDeploymentId}.`
+    );
+  }
+
   const lock = acquireOrchestratorLock({ staleMinutes });
   if (!lock.acquired) {
     throw new Error(

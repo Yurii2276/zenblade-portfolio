@@ -55,7 +55,7 @@
     "autonomous:loop": "node src/autonomous/orchestratorFeedbackLoop.js",
     "test:lab": "node src/lab/testStrategyLab.js && node src/lab/testLearningEngine.js && node src/intelligence/testRegimeDetector.js && node src/lab/testWalkForwardValidator.js",
     "test:auto-paper": "node src/intelligence/testMetaSelector.js && node src/paper/testPaperPromotionGate.js && node src/paper/testAutonomousPaperEngine.js && node src/paper/testPaperFeedback.js",
-    "test:autonomous": "node src/autonomous/testOrchestrator.js"
+    "test:autonomous": "node src/autonomous/testDeploymentLockHandoff.js && node src/autonomous/testOrchestrator.js"
   },
   "main": "src/index.js",
   "license": "MIT"
