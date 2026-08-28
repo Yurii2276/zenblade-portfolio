@@ -1,6 +1,6 @@
 const LONG_STRATEGIES = ["trendMomentum", "trendPullback", "breakoutRetest"];
 
-const SEARCH_SPACE = {
+export const LAB_SEARCH_SPACE = {
   emaPairs: [
     [9, 21],
     [12, 26],
@@ -55,53 +55,88 @@ function pick(values, random) {
 }
 
 function buildParameters(strategyName, random) {
-  const [emaFast, emaSlow] = pick(SEARCH_SPACE.emaPairs, random);
-  const [minRsiForLong, maxRsiForLong] = pick(SEARCH_SPACE.rsiRanges, random);
+  const [emaFast, emaSlow] = pick(LAB_SEARCH_SPACE.emaPairs, random);
+  const [minRsiForLong, maxRsiForLong] = pick(LAB_SEARCH_SPACE.rsiRanges, random);
 
   const common = {
     emaFast,
     emaSlow,
     minRsiForLong,
     maxRsiForLong,
-    minVolumeFactor: pick(SEARCH_SPACE.minVolumeFactor, random),
-    atrStopMultiplier: pick(SEARCH_SPACE.atrStopMultiplier, random),
-    atrTakeMultiplier: pick(SEARCH_SPACE.atrTakeMultiplier, random),
-    useHtfFilter: pick(SEARCH_SPACE.useHtfFilter, random),
+    minVolumeFactor: pick(LAB_SEARCH_SPACE.minVolumeFactor, random),
+    atrStopMultiplier: pick(LAB_SEARCH_SPACE.atrStopMultiplier, random),
+    atrTakeMultiplier: pick(LAB_SEARCH_SPACE.atrTakeMultiplier, random),
+    useHtfFilter: pick(LAB_SEARCH_SPACE.useHtfFilter, random),
   };
 
   if (strategyName === "trendPullback") {
     return {
       ...common,
-      pullbackLookback: pick(SEARCH_SPACE.pullbackLookback, random),
-      pullbackTolerancePct: pick(SEARCH_SPACE.pullbackTolerancePct, random),
+      pullbackLookback: pick(LAB_SEARCH_SPACE.pullbackLookback, random),
+      pullbackTolerancePct: pick(LAB_SEARCH_SPACE.pullbackTolerancePct, random),
     };
   }
 
   if (strategyName === "breakoutRetest") {
     const [breakoutRegimeEmaFast, breakoutRegimeEmaSlow] = pick(
-      SEARCH_SPACE.breakoutRegimePairs,
+      LAB_SEARCH_SPACE.breakoutRegimePairs,
       random
     );
     return {
       ...common,
-      breakoutLookback: pick(SEARCH_SPACE.breakoutLookback, random),
-      breakoutRecentLookback: pick(SEARCH_SPACE.breakoutRecentLookback, random),
-      breakoutBufferPct: pick(SEARCH_SPACE.breakoutBufferPct, random),
-      retestTolerancePct: pick(SEARCH_SPACE.retestTolerancePct, random),
+      breakoutLookback: pick(LAB_SEARCH_SPACE.breakoutLookback, random),
+      breakoutRecentLookback: pick(LAB_SEARCH_SPACE.breakoutRecentLookback, random),
+      breakoutBufferPct: pick(LAB_SEARCH_SPACE.breakoutBufferPct, random),
+      retestTolerancePct: pick(LAB_SEARCH_SPACE.retestTolerancePct, random),
       breakoutRegimeEmaFast,
       breakoutRegimeEmaSlow,
-      breakoutMinEmaSpreadPct: pick(SEARCH_SPACE.breakoutMinEmaSpreadPct, random),
-      breakoutMaxAtrPct: pick(SEARCH_SPACE.breakoutMaxAtrPct, random),
-      breakoutMinRsi: pick(SEARCH_SPACE.breakoutMinRsi, random),
+      breakoutMinEmaSpreadPct: pick(LAB_SEARCH_SPACE.breakoutMinEmaSpreadPct, random),
+      breakoutMaxAtrPct: pick(LAB_SEARCH_SPACE.breakoutMaxAtrPct, random),
+      breakoutMinRsi: pick(LAB_SEARCH_SPACE.breakoutMinRsi, random),
     };
   }
 
   return common;
 }
 
-function stableKey(strategyName, parameters) {
+export function candidateParameterKey(strategyName, parameters) {
   const entries = Object.entries(parameters).sort(([a], [b]) => a.localeCompare(b));
-  return `${strategyName}|${entries.map(([key, value]) => `${key}=${value}`).join("|")}`;
+  return `${strategyName}|${entries.map(([key, value]) => `${key}=${JSON.stringify(value)}`).join("|")}`;
+}
+
+export function mutationGroups(strategyName) {
+  const common = [
+    { keys: ["emaFast", "emaSlow"], values: LAB_SEARCH_SPACE.emaPairs },
+    { keys: ["minRsiForLong", "maxRsiForLong"], values: LAB_SEARCH_SPACE.rsiRanges },
+    { keys: ["minVolumeFactor"], values: LAB_SEARCH_SPACE.minVolumeFactor },
+    { keys: ["atrStopMultiplier"], values: LAB_SEARCH_SPACE.atrStopMultiplier },
+    { keys: ["atrTakeMultiplier"], values: LAB_SEARCH_SPACE.atrTakeMultiplier },
+    { keys: ["useHtfFilter"], values: LAB_SEARCH_SPACE.useHtfFilter },
+  ];
+
+  if (strategyName === "trendPullback") {
+    return [
+      ...common,
+      { keys: ["pullbackLookback"], values: LAB_SEARCH_SPACE.pullbackLookback },
+      { keys: ["pullbackTolerancePct"], values: LAB_SEARCH_SPACE.pullbackTolerancePct },
+    ];
+  }
+
+  if (strategyName === "breakoutRetest") {
+    return [
+      ...common,
+      { keys: ["breakoutLookback"], values: LAB_SEARCH_SPACE.breakoutLookback },
+      { keys: ["breakoutRecentLookback"], values: LAB_SEARCH_SPACE.breakoutRecentLookback },
+      { keys: ["breakoutBufferPct"], values: LAB_SEARCH_SPACE.breakoutBufferPct },
+      { keys: ["retestTolerancePct"], values: LAB_SEARCH_SPACE.retestTolerancePct },
+      { keys: ["breakoutRegimeEmaFast", "breakoutRegimeEmaSlow"], values: LAB_SEARCH_SPACE.breakoutRegimePairs },
+      { keys: ["breakoutMinEmaSpreadPct"], values: LAB_SEARCH_SPACE.breakoutMinEmaSpreadPct },
+      { keys: ["breakoutMaxAtrPct"], values: LAB_SEARCH_SPACE.breakoutMaxAtrPct },
+      { keys: ["breakoutMinRsi"], values: LAB_SEARCH_SPACE.breakoutMinRsi },
+    ];
+  }
+
+  return common;
 }
 
 function defaultResearchSeed() {
@@ -131,7 +166,7 @@ export function generateCandidates({
       if (attempts > candidatesPerStrategy * 50) break;
 
       const parameters = buildParameters(strategyName, random);
-      const key = stableKey(strategyName, parameters);
+      const key = candidateParameterKey(strategyName, parameters);
       if (seen.has(key)) continue;
       seen.add(key);
       createdForStrategy += 1;
@@ -140,6 +175,7 @@ export function generateCandidates({
         candidateId: `${strategyName}-${seedTag}-${String(createdForStrategy).padStart(4, "0")}`,
         strategyName,
         researchSeed: seed,
+        origin: "exploration",
         parameters,
       });
     }
