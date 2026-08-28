@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { appendExperiment, loadExperiments } from "../brain/experimentStore.js";
+import { buildRegimeEvidenceFromWalkForward } from "../intelligence/metaSelector.js";
 
 const DEFAULT_MANIFEST = path.resolve(
   process.env.PAPER_APPROVED_MANIFEST || "data/brain/paper-approved.json"
@@ -48,11 +49,14 @@ function cleanParameters(experiment) {
     folds,
     validation,
     split,
+    learning,
+    parentHoldoutStatus,
     ...strategyParameters
   } = source;
   return {
     candidateId: candidateId ?? null,
     strategyParameters,
+    learning: learning ?? null,
   };
 }
 
@@ -132,7 +136,7 @@ export function selectPaperCandidates(
 
 export function buildPaperApproval(item, policy = DEFAULT_PAPER_GATE_POLICY) {
   const { experiment, verdict } = item;
-  const { candidateId, strategyParameters } = cleanParameters(experiment);
+  const { candidateId, strategyParameters, learning } = cleanParameters(experiment);
   const approvedAt = new Date().toISOString();
 
   return {
@@ -145,9 +149,11 @@ export function buildPaperApproval(item, policy = DEFAULT_PAPER_GATE_POLICY) {
     symbol: experiment.market,
     timeframe: experiment.timeframe ?? "5m",
     strategyParameters,
+    learningLineage: learning,
     researchEvidence: {
       walkForwardScore: experiment.metrics?.score ?? null,
       aggregate: experiment.metrics?.aggregate ?? {},
+      regimeEvidence: buildRegimeEvidenceFromWalkForward(experiment),
       rankScore: verdict.rankScore,
     },
     riskPolicy: {
@@ -208,11 +214,17 @@ export function runPaperPromotionGate(options = {}) {
         metrics: {
           rankScore: verdict.rankScore,
           walkForward: experiment.metrics,
+          regimeEvidence: approval.researchEvidence.regimeEvidence,
         },
         decision:
           "Approved for controlled paper trading only. Live trading remains disabled and requires a separate manual gate.",
         notes: [],
-        tags: ["paper-promotion-v1", "paper-approved", "no-live"],
+        tags: [
+          "paper-promotion-v1",
+          "paper-approved",
+          "no-live",
+          ...(approval.learningLineage?.origin ? [approval.learningLineage.origin] : []),
+        ],
       },
       options.experimentStoreOptions ?? {}
     );
