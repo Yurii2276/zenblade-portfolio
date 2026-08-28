@@ -32,11 +32,6 @@ function experiment(overrides = {}) {
       atrStopMultiplier: 1.2,
       atrTakeMultiplier: 1.8,
       useHtfFilter: false,
-      learning: {
-        origin: "learned",
-        parentFingerprint: "parent-123",
-      },
-      parentHoldoutStatus: "candidate",
       folds: 4,
       validation: "expanding-window chronological walk-forward",
     },
@@ -70,11 +65,19 @@ assert.equal(approval.riskPolicy.riskPerTrade, 0.0025);
 assert.equal(approval.riskPolicy.maxPositionValuePct, 0.1);
 assert.equal(approval.graduationPolicy.requiresManualLiveApproval, true);
 assert.equal(approval.strategyParameters.folds, undefined);
-assert.equal(approval.strategyParameters.learning, undefined);
-assert.equal(approval.strategyParameters.parentHoldoutStatus, undefined);
 assert.equal(approval.strategyParameters.emaFast, 20);
-assert.equal(approval.learningLineage.origin, "learned");
-assert.deepEqual(approval.researchEvidence.regimeEvidence, { byRegime: {} });
+
+const preservedApproval = buildPaperApproval(
+  { experiment: good, verdict },
+  DEFAULT_PAPER_GATE_POLICY,
+  {
+    approvalId: "paper:wf-good-1",
+    approvedAt: "2026-08-01T00:00:00.000Z",
+    paperFeedback: { status: "paper_watch" },
+  }
+);
+assert.equal(preservedApproval.approvedAt, "2026-08-01T00:00:00.000Z");
+assert.equal(preservedApproval.paperFeedback.status, "paper_watch");
 
 const badDrawdown = experiment({
   fingerprint: "wf-bad-dd",
@@ -107,6 +110,30 @@ const selected = selectPaperCandidates([olderDuplicate, good, badDrawdown], {
 });
 assert.equal(selected.length, 1);
 assert.equal(selected[0].experiment.fingerprint, "wf-good-1");
+
+const demotionFeedback = {
+  fingerprint: "paper-feedback-demotion",
+  createdAt: "2026-08-28T10:00:00.000Z",
+  experimentType: "paper_feedback",
+  stage: "paper",
+  status: "paper_demoted",
+  strategyId: "trendMomentum",
+  market: "ETH-USDT",
+  parameters: {
+    parentExperimentFingerprint: "wf-good-1",
+  },
+  metrics: {
+    closedTrades: 18,
+    returnPct: -2,
+    profitFactor: 0.6,
+    maxDrawdownPct: 2.4,
+  },
+};
+const selectedAfterDemotion = selectPaperCandidates(
+  [good, demotionFeedback],
+  DEFAULT_PAPER_GATE_POLICY
+);
+assert.equal(selectedAfterDemotion.length, 0);
 
 const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "paper-gate-"));
 try {

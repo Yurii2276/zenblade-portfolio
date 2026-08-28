@@ -51,7 +51,7 @@ function assignGroup(parameters, group, value) {
     return;
   }
   group.keys.forEach((key, index) => {
-    parameters[key] = value[index];
+    parameters[group.keys[index]] = value[index];
   });
 }
 
@@ -61,7 +61,33 @@ export function cleanStrategyParameters(parameters = {}) {
   );
 }
 
+function parentStrategyParameters(experiment) {
+  if (experiment?.experimentType === "paper_feedback") {
+    return experiment.parameters?.strategyParameters ?? {};
+  }
+  return cleanStrategyParameters(experiment?.parameters ?? {});
+}
+
 function evidenceMetrics(experiment) {
+  if (experiment.experimentType === "paper_feedback") {
+    const metrics = experiment.metrics ?? {};
+    const returnPct = finite(metrics.returnPct);
+    const profitFactor = finite(metrics.profitFactor);
+    const trades = finite(metrics.closedTrades);
+    const drawdownPct = finite(metrics.maxDrawdownPct, 100);
+    return {
+      returnPct,
+      profitFactor,
+      trades,
+      drawdownPct,
+      score:
+        returnPct * 10 +
+        Math.min(profitFactor, 3) * 12 +
+        Math.min(trades, 60) * 0.3 -
+        drawdownPct * 2,
+    };
+  }
+
   if (experiment.experimentType === "strategy_lab_walk_forward") {
     const aggregate = experiment.metrics?.aggregate ?? {};
     return {
@@ -84,6 +110,12 @@ function evidenceMetrics(experiment) {
 }
 
 function statusWeight(experiment) {
+  if (experiment.experimentType === "paper_feedback") {
+    if (experiment.status === "paper_proven") return 180;
+    if (experiment.status === "paper_watch") return 50;
+    return -250;
+  }
+
   if (experiment.experimentType === "strategy_lab_walk_forward") {
     if (experiment.status === "validated") return 120;
     if (experiment.status === "watch") return 65;
@@ -110,11 +142,37 @@ export function parentQuality(experiment) {
 export function isEligibleParent(experiment) {
   if (!experiment?.strategyId || !experiment?.market) return false;
   if (!SUPPORTED_LAB_STRATEGIES.includes(experiment.strategyId)) return false;
-  if (!["strategy_lab_holdout", "strategy_lab_walk_forward"].includes(experiment.experimentType)) {
+  if (
+    ![
+      "strategy_lab_holdout",
+      "strategy_lab_walk_forward",
+      "paper_feedback",
+    ].includes(experiment.experimentType)
+  ) {
     return false;
   }
 
   const metrics = evidenceMetrics(experiment);
+
+  if (experiment.experimentType === "paper_feedback") {
+    if (experiment.status === "paper_demoted") return false;
+    if (experiment.status === "paper_proven") {
+      return (
+        metrics.returnPct > 0 &&
+        metrics.profitFactor >= 1.2 &&
+        metrics.trades >= 30 &&
+        metrics.drawdownPct <= 5
+      );
+    }
+    return (
+      experiment.status === "paper_watch" &&
+      metrics.returnPct > 0 &&
+      metrics.profitFactor >= 1.1 &&
+      metrics.trades >= 15 &&
+      metrics.drawdownPct <= 5
+    );
+  }
+
   if (experiment.experimentType === "strategy_lab_walk_forward") {
     return (
       ["validated", "watch"].includes(experiment.status) &&
@@ -148,7 +206,7 @@ export function selectLearningParents(experiments, strategyName, options = {}) {
     });
 
   for (const experiment of candidates) {
-    const parameters = cleanStrategyParameters(experiment.parameters);
+    const parameters = parentStrategyParameters(experiment);
     const key = `${experiment.market}|${candidateParameterKey(strategyName, parameters)}`;
     if (seen.has(key)) continue;
     seen.add(key);
