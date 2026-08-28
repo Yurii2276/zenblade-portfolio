@@ -53,7 +53,7 @@
     "autonomous:once": "AUTONOMOUS_RUN_ONCE=true node src/autonomous/orchestrator.js",
     "autonomous:loop": "node src/autonomous/orchestrator.js",
     "test:lab": "node src/lab/testStrategyLab.js && node src/lab/testLearningEngine.js && node src/intelligence/testRegimeDetector.js && node src/lab/testWalkForwardValidator.js",
-    "test:auto-paper": "node src/paper/testPaperPromotionGate.js && node src/paper/testAutonomousPaperEngine.js",
+    "test:auto-paper": "node src/intelligence/testMetaSelector.js && node src/paper/testPaperPromotionGate.js && node src/paper/testAutonomousPaperEngine.js",
     "test:autonomous": "node src/autonomous/testOrchestrator.js"
   },
   "main": "src/index.js",
