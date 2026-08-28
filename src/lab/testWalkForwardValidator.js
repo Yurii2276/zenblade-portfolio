@@ -5,7 +5,7 @@ import {
   runWalkForwardCandidate,
   scoreWalkForward,
 } from "./walkForwardValidator.js";
-import { selectHoldoutCandidates } from "./walkForwardLab.js";
+import { isStrongWatchCandidate, selectHoldoutCandidates } from "./walkForwardLab.js";
 
 const windows = buildWalkForwardWindows({
   candleCount: 1400,
@@ -40,6 +40,34 @@ const badVerdict = scoreWalkForward(badAggregate);
 assert.equal(badVerdict.status, "rejected");
 assert.ok(badVerdict.reasons.includes("catastrophic_fold_loss"));
 
+const strongWatch = {
+  experimentType: "strategy_lab_holdout",
+  status: "watch",
+  strategyId: "trendMomentum",
+  market: "SOL-USDT",
+  createdAt: "2026-08-28T01:45:00Z",
+  metrics: {
+    score: 33.91,
+    test: { returnPct: 0.679, profitFactor: 1.866, maxDrawdownPct: 0.398, totalTrades: 15 },
+  },
+  parameters: { candidateId: "strong-watch", emaFast: 12, emaSlow: 34, split: "70/30" },
+};
+assert.equal(isStrongWatchCandidate(strongWatch), true);
+
+const weakWatch = {
+  experimentType: "strategy_lab_holdout",
+  status: "watch",
+  strategyId: "trendPullback",
+  market: "BTC-USDT",
+  createdAt: "2026-08-27T12:00:00Z",
+  metrics: {
+    score: 12,
+    test: { returnPct: 0.2, profitFactor: 1.1, maxDrawdownPct: 2, totalTrades: 7 },
+  },
+  parameters: { candidateId: "weak-watch", emaFast: 20, emaSlow: 50, split: "70/30" },
+};
+assert.equal(isStrongWatchCandidate(weakWatch), false);
+
 const experiments = [
   {
     experimentType: "strategy_lab_holdout",
@@ -47,6 +75,7 @@ const experiments = [
     strategyId: "trendMomentum",
     market: "ETH-USDT",
     createdAt: "2026-08-27T10:00:00Z",
+    metrics: { score: 40, test: { returnPct: 1, profitFactor: 1.4, maxDrawdownPct: 2, totalTrades: 12 } },
     parameters: { candidateId: "old", emaFast: 9, emaSlow: 21, split: "70/30" },
   },
   {
@@ -55,20 +84,23 @@ const experiments = [
     strategyId: "trendMomentum",
     market: "ETH-USDT",
     createdAt: "2026-08-27T11:00:00Z",
+    metrics: { score: 45, test: { returnPct: 1.2, profitFactor: 1.5, maxDrawdownPct: 2, totalTrades: 14 } },
     parameters: { candidateId: "new", emaFast: 9, emaSlow: 21, split: "70/30" },
   },
-  {
-    experimentType: "strategy_lab_holdout",
-    status: "watch",
-    strategyId: "trendPullback",
-    market: "BTC-USDT",
-    createdAt: "2026-08-27T12:00:00Z",
-    parameters: { candidateId: "watch", emaFast: 20, emaSlow: 50, split: "70/30" },
-  },
+  strongWatch,
+  weakWatch,
 ];
 const selected = selectHoldoutCandidates(experiments, { maxCandidates: 10 });
-assert.equal(selected.length, 1);
+assert.equal(selected.length, 2);
 assert.equal(selected[0].parameters.candidateId, "new");
+assert.equal(selected[1].parameters.candidateId, "strong-watch");
+
+const selectedWithoutWatch = selectHoldoutCandidates(experiments, {
+  maxCandidates: 10,
+  includeStrongWatch: false,
+});
+assert.equal(selectedWithoutWatch.length, 1);
+assert.equal(selectedWithoutWatch[0].parameters.candidateId, "new");
 
 const candles = Array.from({ length: 1400 }, (_, index) => {
   const trend = 100 + index * 0.04;
